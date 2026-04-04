@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.ui.graphics.vector.ImageVector
 
 data class BottomNavItem(
@@ -24,6 +25,11 @@ object NavigationItems {
             name = "Поиск",
             route = "recipes",
             icon = Icons.Default.Search
+        ),
+        BottomNavItem(
+            "Список",
+            "shopping_list",
+            Icons.Default.ShoppingCart
         ),
         BottomNavItem(
             name = "Профиль",

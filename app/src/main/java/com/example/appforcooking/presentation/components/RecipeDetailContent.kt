@@ -28,6 +28,8 @@ fun RecipeDetailContent(
     recipe: Recipe,
     ingredients: List<RecipeIngredient>,
     availableCount: Int,
+    isAddingToShoppingList: Boolean = false,
+    onAddToShoppingList: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -36,7 +38,6 @@ fun RecipeDetailContent(
             .verticalScroll(rememberScrollState())
             .background(Color(0xFFF5F5F5))
     ) {
-        // Изображение рецепта
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -205,6 +206,41 @@ fun RecipeDetailContent(
                             ingredient = ingredient,
                             modifier = Modifier.fillMaxWidth()
                         )
+                    }
+                }
+            }
+        }
+
+        val missingCount = ingredients.count { !it.isAvailable }
+        if (missingCount > 0) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                elevation = CardDefaults.cardElevation(4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Список покупок", fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                        Text("Не хватает $missingCount ингредиентов", fontSize = 12.sp, color = Color.Gray)
+                    }
+                    Button(
+                        onClick = onAddToShoppingList,
+                        enabled = !isAddingToShoppingList,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) {
+                        if (isAddingToShoppingList) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                        } else {
+                            Text("Добавить в список")
+                        }
                     }
                 }
             }

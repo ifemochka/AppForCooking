@@ -9,6 +9,7 @@ import com.example.appforcooking.data.local.database.dao.AllergyDao
 import com.example.appforcooking.data.local.database.dao.PantryItemDao
 import com.example.appforcooking.data.local.database.dao.ProductDao
 import com.example.appforcooking.data.local.database.dao.RecipeDao
+import com.example.appforcooking.data.local.database.dao.ShoppingListDao
 import com.example.appforcooking.data.local.database.dao.UserDao
 import com.example.appforcooking.data.local.database.dao.UserProfileDao
 import com.example.appforcooking.data.local.database.entities.AllergyEntity
@@ -16,6 +17,7 @@ import com.example.appforcooking.data.local.database.entities.PantryItemEntity
 import com.example.appforcooking.data.local.database.entities.ProductEntity
 import com.example.appforcooking.data.local.database.entities.RecipeEntity
 import com.example.appforcooking.data.local.database.entities.RecipeIngredientEntity
+import com.example.appforcooking.data.local.database.entities.ShoppingListItemEntity
 import com.example.appforcooking.data.local.database.entities.UserEntity
 import com.example.appforcooking.data.local.database.entities.UserProfileEntity
 
@@ -27,7 +29,8 @@ import com.example.appforcooking.data.local.database.entities.UserProfileEntity
         UserEntity::class,
         UserProfileEntity::class,
         PantryItemEntity::class,
-        AllergyEntity::class
+        AllergyEntity::class,
+        ShoppingListItemEntity::class
     ],
     version = 1,
     exportSchema = false
@@ -40,6 +43,8 @@ abstract class CookingDatabase : RoomDatabase() {
     abstract fun userProfileDao(): UserProfileDao
     abstract fun pantryItemDao(): PantryItemDao
     abstract fun allergyDao(): AllergyDao
+
+    abstract fun shoppingListDao(): ShoppingListDao
 
 
     companion object {

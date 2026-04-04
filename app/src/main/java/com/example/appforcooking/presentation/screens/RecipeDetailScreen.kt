@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -51,6 +52,7 @@ fun RecipeDetailScreen(
 
                 return RecipeDetailViewModel(
                     recipeId = recipeId,
+                    context = context,
                     getRecipeByIdUseCase = GetRecipeByIdUseCase(repository),
                     getRecipeIngredientsUseCase = GetRecipeIngredientsUseCase(repository)
                 ) as T
@@ -62,6 +64,14 @@ fun RecipeDetailScreen(
     val ingredients by viewModel.ingredients.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val availableCount by viewModel.availableCount.collectAsState()
+    val isAddingToShoppingList by viewModel.isAddingToShoppingList.collectAsState()
+    val shoppingListMessage by viewModel.shoppingListMessage.collectAsState()
+
+    LaunchedEffect(shoppingListMessage) {
+        shoppingListMessage?.let {
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -118,6 +128,8 @@ fun RecipeDetailScreen(
                 recipe = recipe!!,
                 ingredients = ingredients,
                 availableCount = availableCount,
+                isAddingToShoppingList = isAddingToShoppingList,
+                onAddToShoppingList = { viewModel.addMissingIngredientsToShoppingList() },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)

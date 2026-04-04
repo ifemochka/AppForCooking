@@ -62,6 +62,10 @@ fun NavigationHost(navController: NavHostController) {
             RecipesScreen(navController = navController)
         }
 
+        composable("shopping_list") {
+            ShoppingListScreen(navController = navController)
+        }
+
         composable("profile") {
             ProfileScreen()
         }
