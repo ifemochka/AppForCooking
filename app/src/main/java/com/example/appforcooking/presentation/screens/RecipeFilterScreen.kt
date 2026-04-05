@@ -28,12 +28,16 @@ fun RecipeFilterScreen(
     var showHard by remember { mutableStateOf(currentFilters.showHard) }
     var hideAllergyRecipes by remember { mutableStateOf(currentFilters.hideAllergyRecipes) }
 
+    var isApplying by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Фильтр рецептов") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        if (!isApplying) navController.popBackStack()
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
                     }
                 },
@@ -114,11 +118,14 @@ fun RecipeFilterScreen(
             ) {
                 OutlinedButton(
                     onClick = {
-                        showEasy = true
-                        showMid = true
-                        showHard = true
-                        hideAllergyRecipes = true
+                        if (!isApplying) {
+                            showEasy = true
+                            showMid = true
+                            showHard = true
+                            hideAllergyRecipes = true
+                        }
                     },
+                    enabled = !isApplying,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Сбросить все")
@@ -126,15 +133,19 @@ fun RecipeFilterScreen(
 
                 Button(
                     onClick = {
-                        val newConfig = ShownRecipes(
-                            showEasy = showEasy,
-                            showMid = showMid,
-                            showHard = showHard,
-                            hideAllergyRecipes = hideAllergyRecipes
-                        )
-                        FilterState.currentFilters = newConfig
-                        navController.popBackStack()
+                        if (!isApplying) {
+                            isApplying = true
+                            val newConfig = ShownRecipes(
+                                showEasy = showEasy,
+                                showMid = showMid,
+                                showHard = showHard,
+                                hideAllergyRecipes = hideAllergyRecipes
+                            )
+                            FilterState.currentFilters = newConfig
+                            navController.popBackStack()
+                        }
                     },
+                    enabled = !isApplying,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF3949AB)
