@@ -51,6 +51,7 @@ import com.example.appforcooking.domain.models.ShownRecipes
 import com.example.appforcooking.domain.usecases.GetAllRecipesUseCase
 import com.example.appforcooking.domain.usecases.GetAvailableRecipesUseCase
 import com.example.appforcooking.presentation.components.RecipeItem
+import com.example.appforcooking.presentation.data.FilterState
 import com.example.appforcooking.presentation.viewmodels.RecipeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,6 +88,14 @@ fun RecipesScreen(navController: NavHostController) {
     val isLoading by viewModel.isLoading.collectAsState()
     val selectedTab by viewModel.selectedTab.collectAsState()
     val shownRecipesConfig by viewModel.shownRecipesConfig.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.updateShownRecipesConfig(FilterState.currentFilters)
+    }
+
+    LaunchedEffect(shownRecipesConfig) {
+        FilterState.currentFilters = shownRecipesConfig
+    }
 
     val isFilterActive = listOf(
         !shownRecipesConfig.showEasy,

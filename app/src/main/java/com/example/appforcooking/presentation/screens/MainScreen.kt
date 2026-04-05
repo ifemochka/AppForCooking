@@ -88,12 +88,8 @@ fun NavigationHost(navController: NavHostController) {
         }
 
         composable("recipe_filter") { backStackEntry ->
-            val currentFilters = backStackEntry.savedStateHandle.get<ShownRecipes>("currentFilters")
-                ?: ShownRecipes.all()
-
             RecipeFilterScreen(
-                navController = navController,
-                currentConfig = currentFilters
+                navController = navController
             )
         }
 

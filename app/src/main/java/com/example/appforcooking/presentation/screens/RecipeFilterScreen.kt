@@ -14,17 +14,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.appforcooking.domain.models.ShownRecipes
+import com.example.appforcooking.presentation.data.FilterState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeFilterScreen(
-    navController: NavHostController,
-    currentConfig: ShownRecipes
+    navController: NavHostController
 ) {
-    var showEasy by remember { mutableStateOf(currentConfig.showEasy) }
-    var showMid by remember { mutableStateOf(currentConfig.showMid) }
-    var showHard by remember { mutableStateOf(currentConfig.showHard) }
-    var hideAllergyRecipes by remember { mutableStateOf(currentConfig.hideAllergyRecipes) }
+    val currentFilters = FilterState.currentFilters
+
+    var showEasy by remember { mutableStateOf(currentFilters.showEasy) }
+    var showMid by remember { mutableStateOf(currentFilters.showMid) }
+    var showHard by remember { mutableStateOf(currentFilters.showHard) }
+    var hideAllergyRecipes by remember { mutableStateOf(currentFilters.hideAllergyRecipes) }
 
     Scaffold(
         topBar = {
@@ -130,7 +132,7 @@ fun RecipeFilterScreen(
                             showHard = showHard,
                             hideAllergyRecipes = hideAllergyRecipes
                         )
-                        navController.previousBackStackEntry?.savedStateHandle?.set("filterResult", newConfig)
+                        FilterState.currentFilters = newConfig
                         navController.popBackStack()
                     },
                     modifier = Modifier.weight(1f),
