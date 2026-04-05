@@ -67,7 +67,11 @@ fun NavigationHost(navController: NavHostController) {
         }
 
         composable("profile") {
-            ProfileScreen()
+            ProfileScreen(navController = navController)
+        }
+
+        composable("cooking_history") {
+            CookingHistoryScreen(navController = navController)
         }
 
 

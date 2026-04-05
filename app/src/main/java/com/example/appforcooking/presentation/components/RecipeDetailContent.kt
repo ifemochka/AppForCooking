@@ -29,7 +29,9 @@ fun RecipeDetailContent(
     ingredients: List<RecipeIngredient>,
     availableCount: Int,
     isAddingToShoppingList: Boolean = false,
+    isAddingToHistory: Boolean = false,
     onAddToShoppingList: () -> Unit = {},
+    onAddToHistory: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -77,6 +79,20 @@ fun RecipeDetailContent(
                         text = "Картинки нет",
                         fontSize = 60.sp
                     )
+                }
+            }
+
+            Button(
+                onClick = onAddToHistory,
+                enabled = !isAddingToHistory,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50)
+                )
+            ) {
+                if (isAddingToHistory) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                } else {
+                    Text("Готовлю")
                 }
             }
         }

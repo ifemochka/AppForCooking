@@ -26,7 +26,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.appforcooking.data.local.database.CookingDatabase
+import com.example.appforcooking.data.repositories.CookingHistoryRepository
 import com.example.appforcooking.data.repositories.RecipeRepository
+import com.example.appforcooking.domain.usecases.AddToCookingHistoryUseCase
 import com.example.appforcooking.domain.usecases.GetRecipeByIdUseCase
 import com.example.appforcooking.domain.usecases.GetRecipeIngredientsUseCase
 import com.example.appforcooking.presentation.components.RecipeDetailContent
@@ -50,11 +52,16 @@ fun RecipeDetailScreen(
                 val productDao = database.productDao()
                 val repository = RecipeRepository(recipeDao, pantryItemDao, productDao)
 
+                val addToHistoryUseCase = AddToCookingHistoryUseCase(
+                    CookingHistoryRepository(database.cookingHistoryDao())
+                )
+
                 return RecipeDetailViewModel(
                     recipeId = recipeId,
                     context = context,
                     getRecipeByIdUseCase = GetRecipeByIdUseCase(repository),
-                    getRecipeIngredientsUseCase = GetRecipeIngredientsUseCase(repository)
+                    getRecipeIngredientsUseCase = GetRecipeIngredientsUseCase(repository),
+                    addToCookingHistoryUseCase = addToHistoryUseCase
                 ) as T
             }
         }
@@ -66,6 +73,8 @@ fun RecipeDetailScreen(
     val availableCount by viewModel.availableCount.collectAsState()
     val isAddingToShoppingList by viewModel.isAddingToShoppingList.collectAsState()
     val shoppingListMessage by viewModel.shoppingListMessage.collectAsState()
+    val isAddingToHistory by viewModel.isAddingToHistory.collectAsState()
+    val historyMessage by viewModel.historyMessage.collectAsState()
 
     LaunchedEffect(shoppingListMessage) {
         shoppingListMessage?.let {
@@ -124,15 +133,16 @@ fun RecipeDetailScreen(
                 )
             }
         } else {
+            // Обновите RecipeDetailContent:
             RecipeDetailContent(
                 recipe = recipe!!,
                 ingredients = ingredients,
                 availableCount = availableCount,
                 isAddingToShoppingList = isAddingToShoppingList,
+                isAddingToHistory = isAddingToHistory,
                 onAddToShoppingList = { viewModel.addMissingIngredientsToShoppingList() },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
+                onAddToHistory = { viewModel.addToHistory() },
+                modifier = Modifier.fillMaxSize().padding(innerPadding)
             )
         }
     }

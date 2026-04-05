@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.example.appforcooking.R
 import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.repositories.ProductRepository
@@ -77,7 +78,7 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(navController: NavHostController) {
     val context = LocalContext.current
 
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -301,6 +302,72 @@ fun ProfileScreen() {
                                 Text("Сохранить")
                             }
                         }
+                    } else {
+                        ProfileInfoRow(
+                            icon = Icons.Default.Person,
+                            label = "Имя",
+                            value = userProfile?.firstName ?: "Не указано"
+                        )
+
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                        ProfileInfoRow(
+                            icon = Icons.Default.Person,
+                            label = "Фамилия",
+                            value = userProfile?.lastName ?: "Не указано"
+                        )
+
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                        ProfileInfoRow(
+                            icon = Icons.Default.Email,
+                            label = "Email",
+                            value = userProfile?.email ?: "test@example.com"
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = { isEditing = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Редактировать профиль")
+                        }
+                    }
+
+
+
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(4.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFE8F5E9)
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = { navController.navigate("cooking_history") },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3949AB)
+                        )
+                    ) {
+                        Text("История приготовлений")
                     }
                 }
             }
@@ -503,6 +570,41 @@ fun ProfileScreen() {
                     }
                 }
             }
+        }
+    }
+}
+
+
+@Composable
+fun ProfileInfoRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column {
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+            Text(
+                text = value,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

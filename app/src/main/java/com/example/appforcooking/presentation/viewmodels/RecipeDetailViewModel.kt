@@ -7,6 +7,7 @@ import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.repositories.ShoppingListRepository
 import com.example.appforcooking.domain.models.Recipe
 import com.example.appforcooking.domain.models.RecipeIngredient
+import com.example.appforcooking.domain.usecases.AddToCookingHistoryUseCase
 import com.example.appforcooking.domain.usecases.GetRecipeByIdUseCase
 import com.example.appforcooking.domain.usecases.GetRecipeIngredientsUseCase
 import kotlinx.coroutines.delay
@@ -19,7 +20,8 @@ class RecipeDetailViewModel(
     private val recipeId: Long,
     private val context: Context,
     private val getRecipeByIdUseCase: GetRecipeByIdUseCase,
-    private val getRecipeIngredientsUseCase: GetRecipeIngredientsUseCase
+    private val getRecipeIngredientsUseCase: GetRecipeIngredientsUseCase,
+    private val addToCookingHistoryUseCase: AddToCookingHistoryUseCase
 ) : ViewModel() {
 
     private val _recipe = MutableStateFlow<Recipe?>(null)
@@ -39,6 +41,12 @@ class RecipeDetailViewModel(
 
     private val _shoppingListMessage = MutableStateFlow<String?>(null)
     val shoppingListMessage: StateFlow<String?> = _shoppingListMessage.asStateFlow()
+
+    private val _isAddingToHistory = MutableStateFlow(false)
+    val isAddingToHistory: StateFlow<Boolean> = _isAddingToHistory.asStateFlow()
+
+    private val _historyMessage = MutableStateFlow<String?>(null)
+    val historyMessage: StateFlow<String?> = _historyMessage.asStateFlow()
 
     init {
         loadRecipeData()
@@ -96,6 +104,30 @@ class RecipeDetailViewModel(
 
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun addToHistory() {
+        viewModelScope.launch {
+            _isAddingToHistory.value = true
+            try {
+                val userId = CookingDatabase.currentUserId
+                val recipeId = _recipe.value?.recipeId ?: return@launch
+                val success = addToCookingHistoryUseCase(userId, recipeId)
+
+                if (success) {
+                    _historyMessage.value = "Рецепт добавлен в историю"
+                } else {
+                    _historyMessage.value = "Ошибка"
+                }
+
+                delay(3000)
+                _historyMessage.value = null
+            } catch (e: Exception) {
+                _historyMessage.value = "Ошибка: ${e.message}"
+            } finally {
+                _isAddingToHistory.value = false
             }
         }
     }
