@@ -1,5 +1,6 @@
 package com.example.appforcooking.presentation.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -76,10 +77,8 @@ fun CookingHistoryScreen(navController: NavHostController) {
         } else if (history.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🍳", fontSize = 64.sp)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("История пуста", style = MaterialTheme.typography.titleLarge)
-                    Text("Нажмите 'Готовлю' в рецептах", color = Color.Gray)
                 }
             }
         } else {
@@ -91,7 +90,12 @@ fun CookingHistoryScreen(navController: NavHostController) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(history) { item ->
-                    HistoryItemCard(item = item)
+                    HistoryItemCard(
+                        item = item,
+                        onClick = {
+                            navController.navigate("recipe_detail/${item.recipeId}")
+                        }
+                    )
                 }
             }
         }
@@ -99,12 +103,17 @@ fun CookingHistoryScreen(navController: NavHostController) {
 }
 
 @Composable
-fun HistoryItemCard(item: CookingHistoryWithRecipe) {
+fun HistoryItemCard(
+    item: CookingHistoryWithRecipe,
+    onClick: () -> Unit
+) {
     val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
     val dateString = dateFormat.format(Date(item.cookedAt))
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
@@ -119,6 +128,7 @@ fun HistoryItemCard(item: CookingHistoryWithRecipe) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "⏱ ${item.cookingTimeMinutes} мин • ${item.difficulty}",
                     fontSize = 12.sp,
