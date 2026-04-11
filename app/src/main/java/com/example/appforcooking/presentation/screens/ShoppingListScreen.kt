@@ -23,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.local.database.dao.ShoppingListItemWithProduct
+import com.example.appforcooking.data.repositories.ProductRepository
 import com.example.appforcooking.data.repositories.ShoppingListRepository
 import com.example.appforcooking.presentation.viewmodels.ShoppingListViewModel
 
@@ -32,24 +33,40 @@ fun ShoppingListScreen(navController: NavHostController) {
     val context = LocalContext.current
     val userId = CookingDatabase.currentUserId
 
-    val repository = remember {
+    val shoppingRepository = remember {
         val db = CookingDatabase.getDatabase(context)
         ShoppingListRepository(db.shoppingListDao())
+    }
+
+    val productRepository = remember {
+        val db = CookingDatabase.getDatabase(context)
+        ProductRepository(
+            productDao = db.productDao(),
+            pantryItemDao = db.pantryItemDao(),
+            allergyDao = db.allergyDao()
+        )
     }
 
     val viewModel: ShoppingListViewModel = viewModel(
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return ShoppingListViewModel(repository) as T
+                return ShoppingListViewModel(shoppingRepository, productRepository) as T
             }
         }
     )
 
     val items by viewModel.items.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val message by viewModel.message.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadItems(userId)
+    }
+
+    LaunchedEffect(message) {
+        message?.let {
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
+        }
     }
 
     val purchasedItems = items.filter { it.isPurchased }
@@ -77,7 +94,7 @@ fun ShoppingListScreen(navController: NavHostController) {
                     onClick = { viewModel.clearPurchased(userId) },
                     containerColor = Color(0xFF3949AB)
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Очистить купленные")
+                    Text("Добавить в холодильник")
                 }
             }
         }
@@ -89,8 +106,6 @@ fun ShoppingListScreen(navController: NavHostController) {
         } else if (items.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🛒", fontSize = 64.sp)
-                    Spacer(modifier = Modifier.height(16.dp))
                     Text("Список покупок пуст", style = MaterialTheme.typography.titleLarge)
                     Text("Добавьте продукты из рецептов", color = Color.Gray)
                 }
