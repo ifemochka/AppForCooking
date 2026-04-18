@@ -61,6 +61,7 @@ import androidx.navigation.NavHostController
 import com.example.appforcooking.R
 import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.repositories.ProductRepository
+import com.example.appforcooking.data.repositories.ServerRepository
 import com.example.appforcooking.data.repositories.UserRepository
 import com.example.appforcooking.domain.usecases.AddAllergyToUserUseCase
 import com.example.appforcooking.domain.usecases.AddProductToPantryUseCase
@@ -96,7 +97,7 @@ fun ProfileScreen(navController: NavHostController) {
                     database.allergyDao()
                 )
                 return SearchViewModel(
-                    searchProductsUseCase = SearchProductsUseCase(repository),
+                    serverRepository = ServerRepository(),  // Добавляем
                     addProductToPantryUseCase = AddProductToPantryUseCase(repository),
                     addAllergyToUserUseCase = AddAllergyToUserUseCase(repository)
                 ) as T

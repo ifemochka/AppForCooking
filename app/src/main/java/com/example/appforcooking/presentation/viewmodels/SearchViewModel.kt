@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appforcooking.data.local.database.CookingDatabase
+import com.example.appforcooking.data.repositories.ServerRepository
 import com.example.appforcooking.domain.models.Product
 import com.example.appforcooking.domain.usecases.AddAllergyToUserUseCase
 import com.example.appforcooking.domain.usecases.AddProductToPantryUseCase
@@ -16,10 +17,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
-    private val searchProductsUseCase: SearchProductsUseCase,
+    private val serverRepository: ServerRepository,
     private val addProductToPantryUseCase: AddProductToPantryUseCase,
     private val addAllergyToUserUseCase: AddAllergyToUserUseCase
-
 ) : ViewModel() {
 
     var searchQuery by mutableStateOf("")
@@ -41,9 +41,7 @@ class SearchViewModel(
 
     fun onSearchQueryChanged(query: String) {
         searchQuery = query
-
         searchJob?.cancel()
-
         searchJob = viewModelScope.launch {
             delay(300)
             performSearch(query)
@@ -60,7 +58,7 @@ class SearchViewModel(
         error = null
 
         try {
-            val results = searchProductsUseCase(query)
+            val results = serverRepository.searchProducts(query)
             searchResults = results
             Log.d("SearchViewModel", "Найдено продуктов: ${results.size}")
         } catch (e: Exception) {
@@ -75,7 +73,7 @@ class SearchViewModel(
         viewModelScope.launch {
             try {
                 val userId = CookingDatabase.currentUserId
-                addProductToPantryUseCase(userId, product.productId.toLong())
+                addProductToPantryUseCase(userId, product.productId)
                 successMessage = "Продукт '${product.name}' добавлен в холодильник"
                 searchQuery = ""
                 searchResults = emptyList()
@@ -91,8 +89,8 @@ class SearchViewModel(
         viewModelScope.launch {
             try {
                 val userId = CookingDatabase.currentUserId
-                addAllergyToUserUseCase(userId, product.productId.toLong())
-                successMessage = "Аллергия на продукт ${product.name} добавлен"
+                addAllergyToUserUseCase(userId, product.productId)
+                successMessage = "Аллергия на продукт ${product.name} добавлена"
                 searchQuery = ""
                 searchResults = emptyList()
                 Log.d("SearchViewModel", "Аллергия на продукт ${product.name} добавлена пользователю $userId")

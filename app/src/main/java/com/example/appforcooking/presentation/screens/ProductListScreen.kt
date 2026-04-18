@@ -59,6 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appforcooking.R
 import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.repositories.ProductRepository
+import com.example.appforcooking.data.repositories.ServerRepository
 import com.example.appforcooking.domain.models.CategoryWithProducts
 import com.example.appforcooking.domain.models.Product
 import com.example.appforcooking.domain.models.toDomain
@@ -115,7 +116,7 @@ fun ProductListScreen() {
                     database.allergyDao()
                 )
                 return SearchViewModel(
-                    searchProductsUseCase = SearchProductsUseCase(repository),
+                    serverRepository = ServerRepository(),  // Добавляем
                     addProductToPantryUseCase = AddProductToPantryUseCase(repository),
                     addAllergyToUserUseCase = AddAllergyToUserUseCase(repository)
                 ) as T
@@ -164,9 +165,9 @@ fun ProductListScreen() {
     }
 
     LaunchedEffect(Unit) {
-        val database = CookingDatabase.getDatabase(context)
-        val productsEntities = database.productDao().getAllProducts().firstOrNull() ?: emptyList()
-        allProducts.value = productsEntities.map { it.toDomain() }
+        val serverRepo = ServerRepository()
+        val productsFromServer = serverRepo.getAllProducts()
+        allProducts.value = productsFromServer
     }
 
     // Очищаем сообщения через 3 секунды
