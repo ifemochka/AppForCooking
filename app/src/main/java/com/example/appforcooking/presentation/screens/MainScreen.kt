@@ -1,23 +1,59 @@
+// presentation/screens/MainScreen.kt
 package com.example.appforcooking.presentation.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.appforcooking.data.auth.AuthManager
 import com.example.appforcooking.domain.models.ShownRecipes
 import com.example.appforcooking.presentation.components.BottomNavigationBar
+import com.example.appforcooking.presentation.data.FilterState
 
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val authManager = remember { AuthManager(context) }
+    var isAuthenticated by remember { mutableStateOf(false) }
+    var checkComplete by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isAuthenticated = authManager.isLoggedIn()
+        checkComplete = true
+    }
+
+    if (!checkComplete) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (!isAuthenticated) {
+        AuthScreen(
+            navController = navController,
+            onAuthSuccess = {
+                isAuthenticated = true
+            }
+        )
+    } else {
+        AppContent(navController = navController)
+    }
+}
+
+@Composable
+fun AppContent(navController: NavHostController) {
     val currentRoute = currentRoute(navController)
 
     Scaffold(
@@ -43,13 +79,13 @@ fun MainScreen() {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            NavigationHost(navController = navController)
+            AppNavigationHost(navController = navController)
         }
     }
 }
 
 @Composable
-fun NavigationHost(navController: NavHostController) {
+fun AppNavigationHost(navController: NavHostController) {
     NavHost(
         navController = navController,
         startDestination = "products"
@@ -73,7 +109,6 @@ fun NavigationHost(navController: NavHostController) {
         composable("cooking_history") {
             CookingHistoryScreen(navController = navController)
         }
-
 
         composable(
             route = "recipe_detail/{recipeId}",
