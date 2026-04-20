@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.appforcooking.R
+import com.example.appforcooking.data.auth.AuthManager
 import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.repositories.ProductRepository
 import com.example.appforcooking.data.repositories.ServerRepository
@@ -79,7 +80,10 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(navController: NavHostController) {
+fun ProfileScreen(
+    navController: NavHostController,
+    onLogout: () -> Unit
+) {
     val context = LocalContext.current
 
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -209,6 +213,13 @@ fun ProfileScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            Button(
+                onClick = { onLogout() },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Выйти из аккаунта")
+            }
             if (error != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),

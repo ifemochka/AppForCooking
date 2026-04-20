@@ -1,12 +1,15 @@
 package com.example.appforcooking.data.server
 
-import com.example.appforcooking.data.server.dto.ProductDto
-import com.example.appforcooking.data.server.dto.RecipeDto
-import com.example.appforcooking.data.server.dto.RecipeIngredientDto
-import retrofit2.http.GET
-import retrofit2.http.Path
+import com.example.appforcooking.data.server.dto.*
+import retrofit2.http.*
 
 interface ApiService {
+
+    @POST("api/auth/register")
+    suspend fun register(@Body request: RegisterRequest): AuthResponse
+
+    @POST("api/auth/login")
+    suspend fun login(@Body request: LoginRequest): AuthResponse
 
     @GET("api/products")
     suspend fun getProducts(): List<ProductDto>

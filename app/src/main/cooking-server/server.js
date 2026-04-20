@@ -4,6 +4,11 @@ const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+
+const SECRET_KEY = '';
 
 const app = express();
 const PORT = 3000;
@@ -78,6 +83,23 @@ async function initDatabase() {
             FOREIGN KEY (recipe_id) REFERENCES recipe(recipe_id) ON DELETE CASCADE,
             FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE
         );
+
+        CREATE TABLE IF NOT EXISTS user (
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS user_profile (
+                profile_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL UNIQUE,
+                first_name TEXT,
+                last_name TEXT,
+                birth_date TEXT,
+                avatar_url TEXT,
+                FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE
+            );
     `);
 
     if (productsList.length > 0) {
@@ -170,6 +192,48 @@ app.get('/api/recipes/:id', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { email, password, firstName, lastName } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Укажите Email и пароль' });
+        }
+
+        const existingUser = await db.get('SELECT * FROM user WHERE email = ?', [email]);
+        if (existingUser) {
+            return res.status(400).json({ error: 'Пользователь уже существует' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const result = await db.run(
+            'INSERT INTO user (email, password_hash, created_at) VALUES (?, ?, ?)',
+            [email, hashedPassword, Date.now()]
+        );
+        const userId = result.lastID;
+
+        await db.run(
+            'INSERT INTO user_profile (user_id, first_name, last_name) VALUES (?, ?, ?)',
+            [userId, firstName || '', lastName || '']
+        );
+
+        const token = jwt.sign({ userId, email }, SECRET_KEY, { expiresIn: '30d' });
+
+        res.json({
+            success: true,
+            token,
+            userId,
+            email,
+            firstName: firstName || '',
+            lastName: lastName || ''
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
 
 async function start() {
     await initDatabase();
