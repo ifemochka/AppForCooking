@@ -4,10 +4,6 @@ const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const path = require('path');
 const fs = require('fs');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-
-const SECRET_KEY = "key";
 
 const app = express();
 const PORT = 3000;
@@ -81,23 +77,6 @@ async function initDatabase() {
             UNIQUE(recipe_id, product_id),
             FOREIGN KEY (recipe_id) REFERENCES recipe(recipe_id) ON DELETE CASCADE,
             FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS user (
-            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            created_at INTEGER NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS user_profile (
-            profile_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL UNIQUE,
-            first_name TEXT,
-            last_name TEXT,
-            birth_date TEXT,
-            avatar_url TEXT,
-            FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE
         );
     `);
 
@@ -189,121 +168,6 @@ app.get('/api/recipes/:id', async (req, res) => {
         res.json({ ...recipe, ingredients });
     } catch (error) {
         res.status(500).json({ error: error.message });
-    }
-});
-
-app.post('/api/auth/register', async (req, res) => {
-    try {
-        const { email, password, firstName, lastName } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email и пароль обязательны' });
-        }
-
-        const existingUser = await db.get('SELECT * FROM user WHERE email = ?', [email]);
-        if (existingUser) {
-            return res.status(400).json({ error: 'Пользователь с таким email уже существует' });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const result = await db.run(
-            'INSERT INTO user (email, password_hash, created_at) VALUES (?, ?, ?)',
-            [email, hashedPassword, Date.now()]
-        );
-        const userId = result.lastID;
-
-        await db.run(
-            'INSERT INTO user_profile (user_id, first_name, last_name) VALUES (?, ?, ?)',
-            [userId, firstName || '', lastName || '']
-        );
-
-        const token = jwt.sign({ userId, email }, SECRET_KEY, { expiresIn: '30d' });
-
-        res.json({
-            success: true,
-            token,
-            userId,
-            email,
-            firstName: firstName || '',
-            lastName: lastName || ''
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Вход
-app.post('/api/auth/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email и пароль обязательны' });
-        }
-
-        const user = await db.get(`
-            SELECT u.*, up.first_name, up.last_name
-            FROM user u
-            LEFT JOIN user_profile up ON u.user_id = up.user_id
-            WHERE u.email = ?
-        `, [email]);
-
-        if (!user) {
-            return res.status(401).json({ error: 'Неверный email или пароль' });
-        }
-
-        const isValidPassword = await bcrypt.compare(password, user.password_hash);
-        if (!isValidPassword) {
-            return res.status(401).json({ error: 'Неверный email или пароль' });
-        }
-
-        const token = jwt.sign({ userId: user.user_id, email }, SECRET_KEY, { expiresIn: '30d' });
-
-        res.json({
-            success: true,
-            token,
-            userId: user.user_id,
-            email: user.email,
-            firstName: user.first_name || '',
-            lastName: user.last_name || ''
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-function authenticate(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Не авторизован' });
-    }
-
-    const token = authHeader.substring(7);
-    try {
-        const decoded = jwt.verify(token, SECRET_KEY);
-        req.user = decoded;
-        next();
-    } catch (err) {
-        return res.status(401).json({ error: 'Недействительный токен' });
-    }
-}
-
-// Получить профиль пользователя (защищенный маршрут)
-app.get('/api/auth/profile', authenticate, async (req, res) => {
-    try {
-        const profile = await db.get(`
-            SELECT u.email, up.first_name, up.last_name, up.birth_date, up.avatar_url
-            FROM user u
-            LEFT JOIN user_profile up ON u.user_id = up.user_id
-            WHERE u.user_id = ?
-        `, [req.user.userId]);
-
-        res.json(profile);
-    } catch (error) {
-        res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
 

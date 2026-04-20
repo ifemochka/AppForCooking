@@ -1,14 +1,9 @@
 package com.example.appforcooking.data.server
 
-import com.example.appforcooking.data.server.dto.AuthResponse
-import com.example.appforcooking.data.server.dto.LoginRequest
 import com.example.appforcooking.data.server.dto.ProductDto
 import com.example.appforcooking.data.server.dto.RecipeDto
 import com.example.appforcooking.data.server.dto.RecipeIngredientDto
-import com.example.appforcooking.data.server.dto.RegisterRequest
-import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface ApiService {
@@ -30,10 +25,4 @@ interface ApiService {
 
     @GET("api/recipes/{recipeId}/ingredients")
     suspend fun getRecipeIngredients(@Path("recipeId") recipeId: Long): List<RecipeIngredientDto>
-
-    @POST("api/auth/register")
-    suspend fun register(@Body request: RegisterRequest): AuthResponse
-
-    @POST("api/auth/login")
-    suspend fun login(@Body request: LoginRequest): AuthResponse
 }
