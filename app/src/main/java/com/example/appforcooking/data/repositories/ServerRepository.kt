@@ -1,9 +1,7 @@
 package com.example.appforcooking.data.repositories
 
 import com.example.appforcooking.data.server.RetrofitClient
-import com.example.appforcooking.data.server.dto.ProductDto
-import com.example.appforcooking.data.server.dto.RecipeDto
-import com.example.appforcooking.data.server.dto.RecipeIngredientDto
+import com.example.appforcooking.data.server.dto.*
 import com.example.appforcooking.domain.models.Product
 import com.example.appforcooking.domain.models.Recipe
 import com.example.appforcooking.domain.models.RecipeIngredient
@@ -123,6 +121,18 @@ class ServerRepository {
             )
         } catch (e: Exception) {
             null
+        }
+    }
+
+    suspend fun updateUserProfile(token: String, firstName: String, lastName: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val response = RetrofitClient.apiService.updateProfile(
+                "Bearer $token",
+                UpdateProfileRequest(firstName, lastName)
+            )
+            response.success
+        } catch (e: Exception) {
+            false
         }
     }
 }

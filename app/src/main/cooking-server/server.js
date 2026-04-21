@@ -275,7 +275,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-app.get('/api/auth/profile', async (req, res) => {
+app.put('/api/auth/profile', async (req, res) => {
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -291,24 +291,21 @@ app.get('/api/auth/profile', async (req, res) => {
         }
 
         const userId = decoded.userId;
+        const { firstName, lastName } = req.body;
 
-        const user = await db.get(`
-            SELECT u.email, up.first_name, up.last_name, up.birth_date, up.avatar_url
-            FROM user u
-            LEFT JOIN user_profile up ON u.user_id = up.user_id
-            WHERE u.user_id = ?
-        `, [userId]);
-
-        if (!user) {
-            return res.status(404).json({ error: 'Пользователь не найден' });
-        }
+        await db.run(`
+            INSERT INTO user_profile (user_id, first_name, last_name)
+            VALUES (?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                first_name = excluded.first_name,
+                last_name = excluded.last_name
+        `, [userId, firstName || '', lastName || '']);
 
         res.json({
-            email: user.email,
-            firstName: user.first_name || '',
-            lastName: user.last_name || '',
-            birthDate: user.birth_date,
-            avatarUrl: user.avatar_url
+            success: true,
+            message: 'Профиль успешно обновлен',
+            firstName: firstName || '',
+            lastName: lastName || ''
         });
     } catch (error) {
         console.error(error);

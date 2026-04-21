@@ -35,6 +35,13 @@ class AuthManager(context: Context) {
             .apply()
     }
 
+    fun updateUserData(firstName: String, lastName: String) {
+        prefs.edit()
+            .putString(KEY_FIRST_NAME, firstName)
+            .putString(KEY_LAST_NAME, lastName)
+            .apply()
+    }
+
     fun logout() {
         prefs.edit().clear().apply()
     }
