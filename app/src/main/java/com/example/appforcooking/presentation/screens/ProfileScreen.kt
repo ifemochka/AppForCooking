@@ -86,6 +86,8 @@ fun ProfileScreen(
 ) {
     val context = LocalContext.current
 
+    val authManager = remember { AuthManager(context) }
+
     val keyboardController = LocalSoftwareKeyboardController.current
 
     var isSearching by remember { mutableStateOf(false) }
@@ -129,14 +131,9 @@ fun ProfileScreen(
     val viewModel: ProfileViewModel = viewModel(
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                val database = CookingDatabase.getDatabase(context)
-                val repository = UserRepository(
-                    userDao = database.userDao(),
-                    userProfileDao = database.userProfileDao() // Добавляем ProfileDao
-                )
                 return ProfileViewModel(
-                    getUserProfileUseCase = GetUserProfileUseCase(repository),
-                    updateUserProfileUseCase = UpdateUserProfileUseCase(repository)
+                    authManager = authManager,
+                    serverRepository = ServerRepository()
                 ) as T
             }
         }

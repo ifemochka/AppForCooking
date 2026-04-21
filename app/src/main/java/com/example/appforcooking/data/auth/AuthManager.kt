@@ -9,6 +9,7 @@ class AuthManager(context: Context) {
 
     companion object {
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
+        private const val KEY_TOKEN = "auth_token"
         private const val KEY_USER_EMAIL = "user_email"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_FIRST_NAME = "first_name"
@@ -19,9 +20,14 @@ class AuthManager(context: Context) {
         return prefs.getBoolean(KEY_IS_LOGGED_IN, false)
     }
 
-    fun saveLoginData(email: String, userId: Long, firstName: String, lastName: String) {
+    fun getToken(): String {
+        return prefs.getString(KEY_TOKEN, "") ?: ""
+    }
+
+    fun saveLoginData(email: String, userId: Long, firstName: String, lastName: String, token: String) {
         prefs.edit()
             .putBoolean(KEY_IS_LOGGED_IN, true)
+            .putString(KEY_TOKEN, token)
             .putString(KEY_USER_EMAIL, email)
             .putLong(KEY_USER_ID, userId)
             .putString(KEY_FIRST_NAME, firstName)
