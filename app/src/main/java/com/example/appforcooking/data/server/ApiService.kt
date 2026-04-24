@@ -11,15 +11,6 @@ interface ApiService {
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
 
-    @GET("api/auth/profile")
-    suspend fun getProfile(@Header("Authorization") token: String): ProfileDto
-
-    @PUT("api/auth/profile")
-    suspend fun updateProfile(
-        @Header("Authorization") token: String,
-        @Body request: UpdateProfileRequest
-    ): UpdateProfileResponse
-
     @GET("api/products")
     suspend fun getProducts(): List<ProductDto>
 

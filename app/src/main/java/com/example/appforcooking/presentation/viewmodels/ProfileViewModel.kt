@@ -2,17 +2,18 @@ package com.example.appforcooking.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.appforcooking.data.auth.AuthManager
-import com.example.appforcooking.data.repositories.ServerRepository
+import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.domain.models.UserProfile
+import com.example.appforcooking.domain.usecases.GetUserProfileUseCase
+import com.example.appforcooking.domain.usecases.UpdateUserProfileUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ProfileViewModel(
-    private val authManager: AuthManager,
-    private val serverRepository: ServerRepository
+    private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val updateUserProfileUseCase: UpdateUserProfileUseCase
 ) : ViewModel() {
 
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
@@ -37,31 +38,9 @@ class ProfileViewModel(
             _error.value = null
 
             try {
-                val token = authManager.getToken()
-                if (token.isNotEmpty()) {
-                    val profile = serverRepository.getUserProfile(token)
-                    if (profile != null) {
-                        _userProfile.value = profile
-                    } else {
-                        _userProfile.value = UserProfile(
-                            userId = authManager.getUserId(),
-                            email = authManager.getUserEmail(),
-                            firstName = authManager.getFirstName(),
-                            lastName = authManager.getLastName(),
-                            birthDate = null,
-                            avatarUrl = null
-                        )
-                    }
-                } else {
-                    _userProfile.value = UserProfile(
-                        userId = authManager.getUserId(),
-                        email = authManager.getUserEmail(),
-                        firstName = authManager.getFirstName(),
-                        lastName = authManager.getLastName(),
-                        birthDate = null,
-                        avatarUrl = null
-                    )
-                }
+                val userId = CookingDatabase.currentUserId
+                val profile = getUserProfileUseCase(userId)
+                _userProfile.value = profile
             } catch (e: Exception) {
                 _error.value = "Ошибка загрузки профиля: ${e.message}"
             } finally {
@@ -71,9 +50,26 @@ class ProfileViewModel(
     }
 
     fun updateUserProfile(firstName: String?, lastName: String?) {
-        // TODO: Обновление профиля на сервере
-        _successMessage.value = "Профиль успешно обновлен"
-        loadUserProfile()
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            try {
+                val userId = CookingDatabase.currentUserId
+                val success = updateUserProfileUseCase(userId, firstName, lastName)
+
+                if (success) {
+                    _successMessage.value = "Профиль успешно обновлен"
+                    // Перезагружаем профиль
+                    loadUserProfile()
+                } else {
+                    _error.value = "Не удалось обновить профиль"
+                }
+            } catch (e: Exception) {
+                _error.value = "Ошибка обновления: ${e.message}"
+                _isLoading.value = false
+            }
+        }
     }
 
     fun clearMessages() {

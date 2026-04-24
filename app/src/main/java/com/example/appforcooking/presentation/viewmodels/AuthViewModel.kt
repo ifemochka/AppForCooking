@@ -37,8 +37,7 @@ class AuthViewModel(
                         email = response.email ?: "",
                         userId = response.userId ?: 0,
                         firstName = response.firstName ?: "",
-                        lastName = response.lastName ?: "",
-                        token = response.token
+                        lastName = response.lastName ?: ""
                     )
                     _isAuthenticated.value = true
                 } else {
@@ -67,15 +66,12 @@ class AuthViewModel(
                         email = response.email ?: "",
                         userId = response.userId ?: 0,
                         firstName = response.firstName ?: "",
-                        lastName = response.lastName ?: "",
-                        token = response.token
+                        lastName = response.lastName ?: ""
                     )
                     _isAuthenticated.value = true
                 } else {
-                    _error.value = response.error ?: "Ошибка регистрации"
                 }
             } catch (e: Exception) {
-                _error.value = "Ошибка подключения к серверу"
             } finally {
                 _isLoading.value = false
             }

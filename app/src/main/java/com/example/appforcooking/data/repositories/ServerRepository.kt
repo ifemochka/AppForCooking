@@ -7,7 +7,6 @@ import com.example.appforcooking.data.server.dto.RecipeIngredientDto
 import com.example.appforcooking.domain.models.Product
 import com.example.appforcooking.domain.models.Recipe
 import com.example.appforcooking.domain.models.RecipeIngredient
-import com.example.appforcooking.domain.models.UserProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -95,34 +94,57 @@ class ServerRepository {
         return try {
             val ingredients = RetrofitClient.apiService.getRecipeIngredients(recipeId)
             ingredients.map { dto ->
-                RecipeIngredient(
-                    recipeIngredientId = dto.recipeIngredientId,
-                    recipeId = dto.recipeId,
-                    productId = dto.productId,
-                    productName = "",
-                    quantity = dto.quantity,
-                    unit = dto.unit,
-                    isAvailable = false
-                )
+                RecipeMapper.toDomain(dto)
             }
         } catch (e: Exception) {
             emptyList()
         }
     }
+}
 
-    suspend fun getUserProfile(token: String): UserProfile? = withContext(Dispatchers.IO) {
-        try {
-            val profileDto = RetrofitClient.apiService.getProfile("Bearer $token")
-            UserProfile(
-                userId = 0,
-                email = profileDto.email,
-                firstName = profileDto.firstName,
-                lastName = profileDto.lastName,
-                birthDate = profileDto.birthDate,
-                avatarUrl = profileDto.avatarUrl
-            )
-        } catch (e: Exception) {
-            null
-        }
+object RecipeMapper {
+
+    fun toDomain(dto: ProductDto): Product {
+        return Product(
+            productId = dto.productId,
+            name = dto.name,
+            category = dto.category,
+            defaultUnit = dto.defaultUnit,
+            caloriesPer100g = dto.caloriesPer100g,
+            barcode = dto.barcode
+        )
+    }
+
+    fun toDomain(dto: RecipeDto): Recipe {
+        return Recipe(
+            recipeId = dto.recipeId,
+            title = dto.title,
+            description = dto.description,
+            cookingTimeMinutes = dto.cookingTimeMinutes,
+            difficulty = dto.difficulty,
+            imageUrl = dto.imageUrl,
+            caloriesTotal = dto.caloriesTotal,
+            instructions = dto.instructions
+        )
+    }
+
+    fun toDomain(dto: RecipeIngredientDto, productName: String = ""): RecipeIngredient {
+        return RecipeIngredient(
+            recipeIngredientId = dto.recipeIngredientId,
+            recipeId = dto.recipeId,
+            productId = dto.productId,
+            productName = productName,
+            quantity = dto.quantity,
+            unit = dto.unit,
+            isAvailable = false
+        )
+    }
+
+    fun toDomainList(recipes: List<RecipeDto>): List<Recipe> {
+        return recipes.map { toDomain(it) }
+    }
+
+    fun toDomainProductList(products: List<ProductDto>): List<Product> {
+        return products.map { toDomain(it) }
     }
 }
