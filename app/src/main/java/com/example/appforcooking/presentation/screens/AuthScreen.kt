@@ -48,23 +48,21 @@ fun AuthScreen(
 
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
+    val navigationEvent by viewModel.navigationEvent.collectAsState()
 
-
-    var isAuth by remember { mutableStateOf(false) }
+    LaunchedEffect(navigationEvent) {
+        if (navigationEvent) {
+            viewModel.consumeNavigationEvent()
+            onAuthSuccess()
+        }
+    }
 
     LaunchedEffect(Unit) {
         email = ""
         password = ""
         firstName = ""
         lastName = ""
-    }
-
-    LaunchedEffect(isAuth) {
-        if (isAuth) {
-            isAuth = false
-            onAuthSuccess()
-        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -155,14 +153,13 @@ fun AuthScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
+
                     Button(
                         onClick = {
                             if (isLoginMode) {
                                 viewModel.login(email, password)
-                                isAuth = isAuthenticated
                             } else {
                                 viewModel.register(email, password, firstName, lastName)
-                                isAuth = isAuthenticated
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(50.dp),

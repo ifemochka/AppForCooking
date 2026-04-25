@@ -59,7 +59,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appforcooking.R
 import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.repositories.ProductRepository
-import com.example.appforcooking.data.repositories.ServerRepository
 import com.example.appforcooking.domain.models.CategoryWithProducts
 import com.example.appforcooking.domain.models.Product
 import com.example.appforcooking.domain.models.toDomain
@@ -116,7 +115,7 @@ fun ProductListScreen() {
                     database.allergyDao()
                 )
                 return SearchViewModel(
-                    serverRepository = ServerRepository(),  // Добавляем
+                    searchProductsUseCase = SearchProductsUseCase(repository),
                     addProductToPantryUseCase = AddProductToPantryUseCase(repository),
                     addAllergyToUserUseCase = AddAllergyToUserUseCase(repository)
                 ) as T
@@ -165,9 +164,9 @@ fun ProductListScreen() {
     }
 
     LaunchedEffect(Unit) {
-        val serverRepo = ServerRepository()
-        val productsFromServer = serverRepo.getAllProducts()
-        allProducts.value = productsFromServer
+        val database = CookingDatabase.getDatabase(context)
+        val productsEntities = database.productDao().getAllProducts().firstOrNull() ?: emptyList()
+        allProducts.value = productsEntities.map { it.toDomain() }
     }
 
     // Очищаем сообщения через 3 секунды
@@ -224,7 +223,7 @@ fun ProductListScreen() {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ru-RU")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ru-RU")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите на русском языке...")
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите на русском языке")
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
 
         }

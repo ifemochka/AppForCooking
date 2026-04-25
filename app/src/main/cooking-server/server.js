@@ -48,9 +48,9 @@ let db;
 
 async function initDatabase() {
     db = await open({
-        filename: path.join(__dirname, 'cooking.db'),
-        driver: sqlite3.Database
-    });
+            filename: path.join(__dirname, 'cooking.db'),
+            driver: sqlite3.Database
+        });
 
     await db.exec(`
         CREATE TABLE IF NOT EXISTS product (
@@ -99,6 +99,35 @@ async function initDatabase() {
                 birth_date TEXT,
                 avatar_url TEXT,
                 FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS pantry_item (
+                pantry_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
+                is_low INTEGER DEFAULT 0,
+                FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE,
+                FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE,
+                UNIQUE(user_id, product_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS allergy (
+                allergy_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE,
+                FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE,
+                UNIQUE(user_id, product_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS cooking_history (
+                history_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                recipe_id INTEGER NOT NULL,
+                cooked_at INTEGER NOT NULL,
+                rating INTEGER,
+                FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE,
+                FOREIGN KEY (recipe_id) REFERENCES recipe(recipe_id) ON DELETE CASCADE
             );
     `);
 
@@ -234,6 +263,176 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        console.log('Login attempt:', { email });
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Укажите Email и пароль' });
+        }
+
+        const user = await db.get('SELECT * FROM user WHERE email = ?', [email]);
+
+        if (!user) {
+            console.log('User not found:', email);
+            return res.status(401).json({ error: 'Пользователь не найден' });
+        }
+
+        const isValidPassword = await bcrypt.compare(password, user.password_hash);
+
+        if (!isValidPassword) {
+            console.log('Invalid password for:', email);
+            return res.status(401).json({ error: 'Неверный пароль' });
+        }
+
+        const profile = await db.get('SELECT first_name, last_name FROM user_profile WHERE user_id = ?', [user.user_id]);
+
+        const token = jwt.sign({ userId: user.user_id, email }, SECRET_KEY, { expiresIn: '30d' });
+
+        console.log('Login successful:', { userId: user.user_id, email });
+
+        res.json({
+            success: true,
+            token,
+            userId: user.user_id,
+            email: user.email,
+            firstName: profile?.first_name || '',
+            lastName: profile?.last_name || ''
+        });
+
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.get('/api/user/sync', async (req, res) => {
+    try {
+        const userId = parseInt(req.query.userId);
+
+        console.log('Sync request for userId:', userId);
+
+        if (!userId) {
+            return res.status(400).json({ error: 'userId required' });
+        }
+
+        const user = await db.get(`
+            SELECT u.user_id, u.email, up.first_name, up.last_name,
+                   up.avatar_url, up.birth_date
+            FROM user u
+            LEFT JOIN user_profile up ON u.user_id = up.user_id
+            WHERE u.user_id = ?
+        `, [userId]);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const pantryItems = await db.all(`
+            SELECT pi.pantry_item_id, pi.product_id, p.name as product_name, pi.is_low
+            FROM pantry_item pi
+            JOIN product p ON pi.product_id = p.product_id
+            WHERE pi.user_id = ?
+        `, [userId]);
+
+        const allergies = await db.all(`
+            SELECT a.allergy_id, a.product_id, p.name as product_name
+            FROM allergy a
+            JOIN product p ON a.product_id = p.product_id
+            WHERE a.user_id = ?
+        `, [userId]);
+
+        let shoppingList = [];
+        try {
+            shoppingList = await db.all(`
+                SELECT sli.item_id, sli.product_id, p.name as product_name, sli.is_purchased
+                FROM shopping_list_item sli
+                JOIN product p ON sli.product_id = p.product_id
+                WHERE sli.user_id = ?
+            `, [userId]);
+        } catch (err) {
+            shoppingList = [];
+        }
+
+        let cookingHistory = [];
+        try {
+            cookingHistory = await db.all(`
+                SELECT ch.history_id, ch.recipe_id, r.title as recipe_title,
+                       ch.cooked_at, ch.rating
+                FROM cooking_history ch
+                JOIN recipe r ON ch.recipe_id = r.recipe_id
+                WHERE ch.user_id = ?
+                ORDER BY ch.cooked_at DESC
+            `, [userId]);
+        } catch (err) {
+            cookingHistory = [];
+        }
+        const response = {
+            success: true,
+            userProfile: {
+                userId: user.user_id,
+                email: user.email,
+                firstName: user.first_name || '',
+                lastName: user.last_name || '',
+                avatarUrl: user.avatar_url || null,
+                birthDate: user.birth_date || null
+            },
+            pantryItems: pantryItems,
+            allergies: allergies,
+            shoppingList: shoppingList,
+            cookingHistory: cookingHistory
+        };
+
+        res.json(response);
+
+    } catch (error) {
+        res.status(500).json({
+            error: error.message,
+            details: error.stack
+        });
+    }
+});
+
+app.get('/api/debug/check-pantry', async (req, res) => {
+    try {
+        const pantryItems = await db.all('SELECT * FROM pantry_item WHERE user_id = 1');
+        res.json({
+            pantryItems: pantryItems,
+            message: 'Check console for details'
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/debug/pantry-items', async (req, res) => {
+    try {
+        const pantryItems = await db.all(`
+            SELECT
+                pi.pantry_item_id,
+                pi.user_id,
+                pi.product_id,
+                pi.is_low,
+                p.name as product_name,
+                u.email as user_email
+            FROM pantry_item pi
+            LEFT JOIN product p ON pi.product_id = p.product_id
+            LEFT JOIN user u ON pi.user_id = u.user_id
+            ORDER BY pi.user_id, pi.product_id
+        `);
+
+        res.json({
+            success: true,
+            count: pantryItems.length,
+            items: pantryItems
+        });
+    } catch (error) {
+        console.error('Ошибка:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 async function start() {
     await initDatabase();

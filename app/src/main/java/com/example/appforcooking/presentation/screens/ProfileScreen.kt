@@ -62,7 +62,6 @@ import com.example.appforcooking.R
 import com.example.appforcooking.data.auth.AuthManager
 import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.repositories.ProductRepository
-import com.example.appforcooking.data.repositories.ServerRepository
 import com.example.appforcooking.data.repositories.UserRepository
 import com.example.appforcooking.domain.usecases.AddAllergyToUserUseCase
 import com.example.appforcooking.domain.usecases.AddProductToPantryUseCase
@@ -101,7 +100,7 @@ fun ProfileScreen(
                     database.allergyDao()
                 )
                 return SearchViewModel(
-                    serverRepository = ServerRepository(),  // Добавляем
+                    searchProductsUseCase = SearchProductsUseCase(repository),
                     addProductToPantryUseCase = AddProductToPantryUseCase(repository),
                     addAllergyToUserUseCase = AddAllergyToUserUseCase(repository)
                 ) as T

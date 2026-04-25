@@ -1,5 +1,6 @@
 package com.example.appforcooking.data.server
 
+import com.google.gson.GsonBuilder
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import okhttp3.OkHttpClient
@@ -9,6 +10,12 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     private const val BASE_URL = ""
+
+    private val gson = GsonBuilder()
+        .setFieldNamingPolicy(com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+        .registerTypeAdapter(Boolean::class.java, BooleanTypeAdapter())
+        .registerTypeAdapter(java.lang.Boolean::class.java, BooleanTypeAdapter())
+        .create()
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -21,7 +28,7 @@ object RetrofitClient {
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(client)
-        .addConverterFactory(GsonConverterFactory.create())
+        .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
 
     val apiService: ApiService = retrofit.create(ApiService::class.java)

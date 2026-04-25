@@ -10,27 +10,40 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.appforcooking.data.auth.AuthManager
+import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.domain.models.ShownRecipes
 import com.example.appforcooking.presentation.components.BottomNavigationBar
+import com.example.appforcooking.presentation.viewmodels.AuthViewModel
 
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
     val authManager = remember { AuthManager(context) }
 
+    val authViewModel: AuthViewModel = viewModel(
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                return AuthViewModel(authManager) as T
+            }
+        }
+    )
+
     var showAuth by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val isLoggedIn = authManager.isLoggedIn()
         showAuth = !isLoggedIn
+        if (isLoggedIn) {
+            CookingDatabase.currentUserId = authManager.getUserId()
+        }
     }
-
 
     if (showAuth) {
         Log.d("Screen", "Showing AuthScreen")
@@ -43,6 +56,7 @@ fun MainScreen() {
         MainAppContent(
             onLogout = {
                 authManager.logout()
+                authViewModel.resetState()
                 showAuth = true
             }
         )

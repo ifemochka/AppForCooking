@@ -41,4 +41,8 @@ interface PantryItemDao {
         WHERE pi.user_id = :userId
     """)
     suspend fun getUserProductsSync(userId: Long): List<ProductEntity>
+
+
+    @Query("DELETE FROM pantry_item WHERE user_id = :userId")
+    suspend fun deleteAllForUser(userId: Long)
 }

@@ -3,6 +3,7 @@ package com.example.appforcooking.data.local.database.dao
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.appforcooking.data.local.database.entities.ShoppingListItemEntity
@@ -34,6 +35,10 @@ interface ShoppingListDao {
 
     @Query("DELETE FROM shopping_list_item WHERE user_id = :userId AND is_purchased = 1")
     suspend fun deletePurchased(userId: Long)
+
+
+        @Query("DELETE FROM shopping_list_item WHERE user_id = :userId")
+        suspend fun deleteAllForUser(userId: Long)
 }
 
 data class ShoppingListItemWithProduct(
