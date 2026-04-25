@@ -29,4 +29,7 @@ interface UserProfileDao {
 
     @Query("DELETE FROM user_profile WHERE user_id = :userId")
     suspend fun deleteByUserId(userId: Long)
+
+    @Query("DELETE FROM user_profile")
+    suspend fun deleteAllUsers()
 }

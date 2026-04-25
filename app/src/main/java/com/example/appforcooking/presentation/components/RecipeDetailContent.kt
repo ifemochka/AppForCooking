@@ -81,28 +81,13 @@ fun RecipeDetailContent(
                     )
                 }
             }
-
-            Button(
-                onClick = onAddToHistory,
-                enabled = !isAddingToHistory,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4CAF50)
-                )
-            ) {
-                if (isAddingToHistory) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
-                } else {
-                    Text("Готовлю")
-                }
-            }
         }
 
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            shape = MaterialTheme.shapes.large
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Column(
                 modifier = Modifier.padding(20.dp)
@@ -112,24 +97,22 @@ fun RecipeDetailContent(
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF3949AB),
-                    modifier = Modifier.padding(bottom = 12.dp),
                     fontFamily = Fonts.font
                 )
 
                 if (recipe.description.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = recipe.description,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(bottom = 16.dp),
-                        lineHeight = 24.sp
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     DetailItem(
@@ -138,20 +121,33 @@ fun RecipeDetailContent(
                         value = "${recipe.cookingTimeMinutes} мин",
                         color = Color(0xFF2196F3)
                     )
-
                     DetailItem(
                         icon = Icons.Default.Whatshot,
                         title = "Сложность",
                         value = recipe.difficulty,
                         color = Color(0xFF4CAF50)
                     )
-
                     DetailItem(
                         icon = Icons.Default.LocalFireDepartment,
                         title = "Калории",
                         value = "${recipe.caloriesTotal} ккал",
                         color = Color(0xFFFF9800)
                     )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onAddToHistory,
+                    enabled = !isAddingToHistory,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isAddingToHistory) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                    } else {
+                        Text("Готовлю")
+                    }
                 }
             }
         }
@@ -200,7 +196,7 @@ fun RecipeDetailContent(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 LinearProgressIndicator(
-                    progress = availableCount.toFloat() / ingredients.size,
+                    progress = if (ingredients.isNotEmpty()) availableCount.toFloat() / ingredients.size else 0f,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)

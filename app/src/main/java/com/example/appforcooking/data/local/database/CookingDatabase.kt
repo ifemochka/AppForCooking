@@ -10,6 +10,7 @@ import com.example.appforcooking.data.local.database.dao.CookingHistoryDao
 import com.example.appforcooking.data.local.database.dao.PantryItemDao
 import com.example.appforcooking.data.local.database.dao.ProductDao
 import com.example.appforcooking.data.local.database.dao.RecipeDao
+import com.example.appforcooking.data.local.database.dao.RecipeIngredientDao
 import com.example.appforcooking.data.local.database.dao.ShoppingListDao
 import com.example.appforcooking.data.local.database.dao.UserDao
 import com.example.appforcooking.data.local.database.dao.UserProfileDao
@@ -41,14 +42,12 @@ import com.example.appforcooking.data.local.database.entities.UserProfileEntity
 abstract class CookingDatabase : RoomDatabase() {
     abstract fun productDao(): ProductDao
     abstract fun recipeDao(): RecipeDao
+    abstract fun recipeIngredientDao(): RecipeIngredientDao
     abstract fun userDao(): UserDao
-
     abstract fun userProfileDao(): UserProfileDao
     abstract fun pantryItemDao(): PantryItemDao
     abstract fun allergyDao(): AllergyDao
-
     abstract fun shoppingListDao(): ShoppingListDao
-
     abstract fun cookingHistoryDao(): CookingHistoryDao
 
 
@@ -89,6 +88,5 @@ abstract class CookingDatabase : RoomDatabase() {
                 }
             }
         }
-
     }
 }

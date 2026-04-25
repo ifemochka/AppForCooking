@@ -89,17 +89,6 @@ class ServerRepository {
             null
         }
     }
-
-    suspend fun getRecipeIngredients(recipeId: Long): List<RecipeIngredient> {
-        return try {
-            val ingredients = RetrofitClient.apiService.getRecipeIngredients(recipeId)
-            ingredients.map { dto ->
-                RecipeMapper.toDomain(dto)
-            }
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
 }
 
 object RecipeMapper {

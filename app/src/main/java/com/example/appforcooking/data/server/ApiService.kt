@@ -23,11 +23,11 @@ interface ApiService {
     @GET("api/recipes")
     suspend fun getRecipes(): List<RecipeDto>
 
+    @GET("api/recipeIngredients")
+    suspend fun getRecipeIngredients(): List<RecipeIngredientDto>
+
     @GET("api/recipes/{id}")
     suspend fun getRecipeById(@Path("id") id: Long): RecipeDto
-
-    @GET("api/recipes/{recipeId}/ingredients")
-    suspend fun getRecipeIngredients(@Path("recipeId") recipeId: Long): List<RecipeIngredientDto>
 
     @GET("api/user/sync")
     suspend fun syncUserData(@Query("userId") userId: Long): SyncResponse

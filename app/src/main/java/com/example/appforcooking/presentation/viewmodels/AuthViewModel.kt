@@ -90,7 +90,6 @@ class AuthViewModel(
                 _error.value = "Ошибка подключения к серверу: ${e.message}"
             } finally {
                 _isLoading.value = false
-                Log.d(TAG, "=== ЛОГИН ЗАВЕРШЕН ===")
             }
         }
     }
@@ -132,7 +131,6 @@ class AuthViewModel(
                 _error.value = "Ошибка подключения к серверу: ${e.message}"
             } finally {
                 _isLoading.value = false
-                Log.d(TAG, "=== РЕГИСТРАЦИЯ ЗАВЕРШЕНА ===")
             }
         }
     }
