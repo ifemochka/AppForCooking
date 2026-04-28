@@ -10,3 +10,9 @@ data class Recipe(
     val caloriesTotal: Int,
     val instructions: String
 )
+
+
+data class RecipeWithPercentage(
+    val recipe: Recipe,
+    val percentage: Double
+)

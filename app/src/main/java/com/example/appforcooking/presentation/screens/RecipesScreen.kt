@@ -49,6 +49,7 @@ import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.repositories.RecipeRepository
 import com.example.appforcooking.domain.models.ShownRecipes
 import com.example.appforcooking.domain.usecases.GetAllRecipesUseCase
+import com.example.appforcooking.domain.usecases.GetAllRecipesWithPercentageUseCase
 import com.example.appforcooking.domain.usecases.GetAvailableRecipesUseCase
 import com.example.appforcooking.presentation.components.RecipeItem
 import com.example.appforcooking.presentation.data.FilterState
@@ -76,6 +77,9 @@ fun RecipesScreen(navController: NavHostController) {
 
                 return RecipeViewModel(
                     getAllRecipesUseCase = GetAllRecipesUseCase(repository),
+                    getAllRecipesWithPercentageUseCase = GetAllRecipesWithPercentageUseCase(
+                        repository
+                    ),
                     getAvailableRecipesUseCase = GetAvailableRecipesUseCase(repository),
                     recipeDao = recipeDao,
                     allergyDao = allergyDao

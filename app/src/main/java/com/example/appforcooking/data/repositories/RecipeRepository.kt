@@ -6,6 +6,7 @@ import com.example.appforcooking.data.local.database.dao.RecipeDao
 import com.example.appforcooking.data.local.mappers.RecipeMapper
 import com.example.appforcooking.domain.models.Recipe
 import com.example.appforcooking.domain.models.RecipeIngredient
+import com.example.appforcooking.domain.models.RecipeWithPercentage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -72,5 +73,32 @@ class RecipeRepository(
         }
 
         return result
+    }
+
+    fun getAllRecipesWithPercentage(userId: Long): Flow<List<RecipeWithPercentage>> = flow {
+        val allRecipes = recipeDao.getAllRecipesSync()
+        val userProducts = pantryItemDao.getUserProductsSync(userId)
+        val userProductIds = userProducts.map { it.productId }.toSet()
+
+        val recipesWithPercentage = allRecipes.map { recipe ->
+            val ingredients = recipeDao.getRecipeIngredients(recipe.recipeId)
+            val totalIngredients = ingredients.size
+            val availableIngredients = ingredients.count { ingredient ->
+                ingredient.productId in userProductIds
+            }
+
+            val percentage = if (totalIngredients > 0) {
+                (availableIngredients.toDouble() / totalIngredients.toDouble()) * 100
+            } else {
+                0.0
+            }
+
+            RecipeWithPercentage(
+                recipe = RecipeMapper.toDomain(recipe),
+                percentage = percentage
+            )
+        }
+
+        emit(recipesWithPercentage.sortedByDescending { it.percentage })
     }
 }
