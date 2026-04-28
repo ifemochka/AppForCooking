@@ -80,3 +80,14 @@ data class CookingHistoryAddRequest(
     @SerializedName("rating")
     val rating: Int? = null
 )
+
+data class UpdateShoppingItemStatusRequest(
+    @SerializedName("userId")
+    val userId: Long,
+
+    @SerializedName("productId")
+    val productId: Long,
+
+    @SerializedName("isPurchased")
+    val isPurchased: Boolean
+)

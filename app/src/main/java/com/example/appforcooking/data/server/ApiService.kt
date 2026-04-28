@@ -65,4 +65,7 @@ interface ApiService {
 
     @POST("api/user/cooking-history/add")
     suspend fun addToCookingHistory(@Body request: CookingHistoryAddRequest): Response<Map<String, Any>>
+
+    @PUT("api/user/shopping-list/update")
+    suspend fun updateShoppingItemStatus(@Body request: UpdateShoppingItemStatusRequest): Response<Map<String, Any>>
 }

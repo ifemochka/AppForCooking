@@ -8,6 +8,7 @@ import com.example.appforcooking.data.server.dto.PantryAddRequest
 import com.example.appforcooking.data.server.dto.PantryRemoveRequest
 import com.example.appforcooking.data.server.dto.ProfileUpdateRequest
 import com.example.appforcooking.data.server.dto.ShoppingListAddRequest
+import com.example.appforcooking.data.server.dto.UpdateShoppingItemStatusRequest
 
 class SyncChangesRepository(
     private val apiService: ApiService
@@ -141,6 +142,42 @@ class SyncChangesRepository(
                 Log.d(TAG, "Рецепт добавлен в историю приготовлений на сервере")
             } else {
                 Log.e(TAG, "Ошибка добавления в историю: ${response.code()} ${response.message()}")
+            }
+            success
+        } catch (e: Exception) {
+            Log.e(TAG, "Исключение: ${e.message}", e)
+            false
+        }
+    }
+
+    suspend fun removePurchasedProducts(userId: Long, productId: Long): Boolean {
+        return try {
+            Log.d(TAG, "Отправка на сервер: удаление продукта из списка покупок на продукт $productId")
+            val response = apiService.removeFromShoppingList(userId, productId)
+            val success = response.isSuccessful
+            if (success) {
+                Log.d(TAG, "Продукт из списка покупок $productId удален на сервере")
+            } else {
+                Log.e(TAG, "Ошибка удаления: ${response.code()} ${response.message()}")
+            }
+            success
+        } catch (e: Exception) {
+            Log.e(TAG, "Исключение: ${e.message}", e)
+            false
+        }
+    }
+
+    suspend fun updateShoppingItemStatusOnServer(userId: Long, productId: Long, isPurchased: Boolean): Boolean {
+        return try {
+            Log.d(TAG, "Отправка на сервер: обновление статуса продукта $productId -> purchased=$isPurchased")
+            val response = apiService.updateShoppingItemStatus(
+                UpdateShoppingItemStatusRequest(userId, productId, isPurchased)
+            )
+            val success = response.isSuccessful
+            if (success) {
+                Log.d(TAG, "Статус продукта $productId обновлен на сервере")
+            } else {
+                Log.e(TAG, "Ошибка обновления статуса: ${response.code()} ${response.message()}")
             }
             success
         } catch (e: Exception) {

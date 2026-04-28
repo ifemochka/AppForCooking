@@ -126,7 +126,7 @@ fun ShoppingListScreen(navController: NavHostController) {
                         ShoppingListItemCard(
                             item = item,
                             isPurchased = item.isPurchased,
-                            onToggle = { viewModel.togglePurchased(item.id, item.isPurchased, userId) }
+                            onToggle = { viewModel.togglePurchased(item, item.isPurchased, userId) }
                         )
                     }
                 }
@@ -140,7 +140,7 @@ fun ShoppingListScreen(navController: NavHostController) {
                         ShoppingListItemCard(
                             item = item,
                             isPurchased = item.isPurchased,
-                            onToggle = { viewModel.togglePurchased(item.id, item.isPurchased, userId) }
+                            onToggle = { viewModel.togglePurchased(item, item.isPurchased, userId) }
                         )
                     }
                 }

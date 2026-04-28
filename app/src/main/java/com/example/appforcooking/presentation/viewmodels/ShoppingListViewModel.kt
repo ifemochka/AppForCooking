@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.appforcooking.data.local.database.dao.ShoppingListItemWithProduct
 import com.example.appforcooking.data.repositories.ProductRepository
 import com.example.appforcooking.data.repositories.ShoppingListRepository
+import com.example.appforcooking.data.repositories.SyncChangesRepository
+import com.example.appforcooking.data.server.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +17,10 @@ class ShoppingListViewModel(
     private val shoppingListRepository: ShoppingListRepository,
     private val productRepository: ProductRepository
 ) : ViewModel() {
+
+    private val syncRepository = SyncChangesRepository(
+        RetrofitClient.apiService
+    )
 
     private val _items = MutableStateFlow<List<ShoppingListItemWithProduct>>(emptyList())
     val items: StateFlow<List<ShoppingListItemWithProduct>> = _items.asStateFlow()
@@ -35,12 +41,18 @@ class ShoppingListViewModel(
         }
     }
 
-    fun togglePurchased(itemId: Long, currentStatus: Boolean, userId: Long) {
+    fun togglePurchased(item: ShoppingListItemWithProduct, currentStatus: Boolean, userId: Long) {
         viewModelScope.launch {
-            shoppingListRepository.togglePurchased(itemId, currentStatus)
+            shoppingListRepository.togglePurchased(item.id, currentStatus)
+            val serverSuccess = syncRepository.updateShoppingItemStatusOnServer(
+                userId,
+                item.productId,
+                !currentStatus
+            )
             loadItems(userId)
         }
     }
+
 
     fun clearPurchased(userId: Long) {
         viewModelScope.launch {
@@ -60,12 +72,20 @@ class ShoppingListViewModel(
                 for (item in purchasedItems) {
                     try {
                         productRepository.addProductToUser(userId, item.productId)
+                        val serverSuccess = syncRepository.addProductToPantryOnServer(userId, item.productId)
                         addedCount++
                     } catch (e: Exception) {
                     }
                 }
 
+                for (item in purchasedItems) {
+                    try {
+                        val serverSuccess = syncRepository.removePurchasedProducts(userId, item.productId)
+                    } catch (e: Exception) {
+                    }
+                }
                 shoppingListRepository.clearPurchased(userId)
+
                 loadItems(userId)
 
                 _message.value = "Добавлено $addedCount продуктов в холодильник"

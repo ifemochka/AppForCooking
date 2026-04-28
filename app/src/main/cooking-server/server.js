@@ -760,6 +760,47 @@ app.post('/api/user/cooking-history/add', async (req, res) => {
     }
 });
 
+app.put('/api/user/shopping-list/update', async (req, res) => {
+    try {
+        const { userId, productId, isPurchased } = req.body;
+        if (!userId || !productId) {
+            return res.status(400).json({ error: 'userId and productId required' });
+        }
+
+        const result = await db.run(
+            'UPDATE shopping_list_item SET is_purchased = ? WHERE user_id = ? AND product_id = ?',
+            [isPurchased ? 1 : 0, userId, productId]
+        );
+
+        if (result.changes > 0) {
+            console.log(`Updated status for product ${productId} to purchased=${isPurchased}`);
+            res.json({
+                success: true,
+                message: 'Shopping item status updated',
+                userId: userId,
+                productId: productId,
+                isPurchased: isPurchased
+            });
+        } else {
+            await db.run(
+                'INSERT INTO shopping_list_item (user_id, product_id, is_purchased) VALUES (?, ?, ?)',
+                [userId, productId, isPurchased ? 1 : 0]
+            );
+            res.json({
+                success: true,
+                message: 'Shopping item created with status',
+                userId: userId,
+                productId: productId,
+                isPurchased: isPurchased
+            });
+        }
+
+    } catch (error) {
+        console.error('Update shopping item error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 async function start() {
     await initDatabase();
 

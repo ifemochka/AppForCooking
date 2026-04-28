@@ -36,9 +36,8 @@ interface ShoppingListDao {
     @Query("DELETE FROM shopping_list_item WHERE user_id = :userId AND is_purchased = 1")
     suspend fun deletePurchased(userId: Long)
 
-
-        @Query("DELETE FROM shopping_list_item WHERE user_id = :userId")
-        suspend fun deleteAllForUser(userId: Long)
+    @Query("DELETE FROM shopping_list_item WHERE user_id = :userId")
+    suspend fun deleteAllForUser(userId: Long)
 }
 
 data class ShoppingListItemWithProduct(
