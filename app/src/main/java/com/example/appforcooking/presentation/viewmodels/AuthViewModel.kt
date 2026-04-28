@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class AuthViewModel(
     private val authManager: AuthManager
@@ -41,7 +42,7 @@ class AuthViewModel(
             _isLoading.value = true
             _error.value = null
 
-            Log.d(TAG, "Email: $email")
+            Log.d(TAG, "Попытка входа для email: $email")
 
             try {
                 val response = RetrofitClient.apiService.login(LoginRequest(email, password))
@@ -85,9 +86,32 @@ class AuthViewModel(
                     Log.e(TAG, "Ошибка логина: ${response.error}")
                     _error.value = response.error ?: "Ошибка входа"
                 }
+            } catch (e: HttpException) {
+                Log.e(TAG, "HTTP ошибка: ${e.code()} - ${e.message()}")
+                when (e.code()) {
+                    401 -> {
+                        _error.value = "Неверный email или пароль. Проверьте введённые данные."
+                    }
+                    404 -> {
+                        _error.value = "Сервер не найден. Проверьте подключение."
+                    }
+                    500 -> {
+                        _error.value = "Ошибка на сервере. Попробуйте позже."
+                    }
+                    else -> {
+                        _error.value = "Ошибка сервера: ${e.code()}"
+                    }
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Исключение при логине: ${e.message}", e)
-                _error.value = "Ошибка подключения к серверу: ${e.message}"
+
+                val errorMessage = when {
+                    e.message?.contains("timeout") == true -> "Превышено время ожидания. Проверьте соединение."
+                    e.message?.contains("Failed to connect") == true -> "Не удалось подключиться к серверу. Проверьте интернет."
+                    e.message?.contains("UnknownHost") == true -> "Сервер недоступен. Проверьте адрес сервера."
+                    else -> "Ошибка подключения к серверу: ${e.message}"
+                }
+                _error.value = errorMessage
             } finally {
                 _isLoading.value = false
             }
@@ -99,7 +123,7 @@ class AuthViewModel(
             _isLoading.value = true
             _error.value = null
 
-            Log.d(TAG, "Email: $email, FirstName: $firstName, LastName: $lastName")
+            Log.d(TAG, "Попытка регистрации для email: $email, FirstName: $firstName, LastName: $lastName")
 
             try {
                 val response = RetrofitClient.apiService.register(
@@ -145,9 +169,35 @@ class AuthViewModel(
                     Log.e(TAG, "Ошибка регистрации: ${response.error}")
                     _error.value = response.error ?: "Ошибка регистрации"
                 }
+            } catch (e: HttpException) {
+                Log.e(TAG, "HTTP ошибка при регистрации: ${e.code()} - ${e.message()}")
+                when (e.code()) {
+                    400 -> {
+                        _error.value = "Пользователь с таким email уже существует или данные некорректны"
+                    }
+                    409 -> {
+                        _error.value = "Пользователь с таким email уже зарегистрирован"
+                    }
+                    401 -> {
+                        _error.value = "Ошибка авторизации при регистрации"
+                    }
+                    500 -> {
+                        _error.value = "Ошибка на сервере. Попробуйте позже."
+                    }
+                    else -> {
+                        _error.value = "Ошибка сервера: ${e.code()}"
+                    }
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Исключение при регистрации: ${e.message}", e)
-                _error.value = "Ошибка подключения к серверу: ${e.message}"
+
+                val errorMessage = when {
+                    e.message?.contains("timeout") == true -> "Превышено время ожидания. Проверьте соединение."
+                    e.message?.contains("Failed to connect") == true -> "Не удалось подключиться к серверу. Проверьте интернет."
+                    e.message?.contains("UnknownHost") == true -> "Сервер недоступен. Проверьте адрес сервера."
+                    else -> "Ошибка подключения к серверу: ${e.message}"
+                }
+                _error.value = errorMessage
             } finally {
                 _isLoading.value = false
             }

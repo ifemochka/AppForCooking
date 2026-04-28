@@ -43,6 +43,7 @@ fun AuthScreen(
     var isLoginMode by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
 
@@ -51,6 +52,22 @@ fun AuthScreen(
     val isSyncing by viewModel.isSyncing.collectAsState()
     val navigationEvent by viewModel.navigationEvent.collectAsState()
 
+    var passwordMismatchError by remember { mutableStateOf<String?>(null) }
+
+    fun resetForm() {
+        email = ""
+        password = ""
+        confirmPassword = ""
+        firstName = ""
+        lastName = ""
+        passwordMismatchError = null
+        viewModel.clearError()
+    }
+
+    LaunchedEffect(isLoginMode) {
+        resetForm()
+    }
+
     LaunchedEffect(navigationEvent) {
         if (navigationEvent) {
             viewModel.consumeNavigationEvent()
@@ -58,11 +75,14 @@ fun AuthScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        email = ""
-        password = ""
-        firstName = ""
-        lastName = ""
+    LaunchedEffect(password, confirmPassword) {
+        if (!isLoginMode) {
+            if (confirmPassword.isNotEmpty() && password != confirmPassword) {
+                passwordMismatchError = "Пароли не совпадают"
+            } else {
+                passwordMismatchError = null
+            }
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -102,43 +122,80 @@ fun AuthScreen(
 
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = {
+                            email = it
+                            viewModel.clearError()
+                        },
                         label = { Text("Email") },
                         leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        isError = error != null
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = {
+                            password = it
+                            viewModel.clearError()
+                        },
                         label = { Text("Пароль") },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        isError = error != null
                     )
 
                     if (!isLoginMode) {
                         Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedTextField(
+                            value = confirmPassword,
+                            onValueChange = {
+                                confirmPassword = it
+                                viewModel.clearError()
+                            },
+                            label = { Text("Подтверждение пароля") },
+                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            shape = RoundedCornerShape(12.dp),
+                            isError = passwordMismatchError != null,
+                            supportingText = {
+                                if (passwordMismatchError != null) {
+                                    Text(
+                                        text = passwordMismatchError!!,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         OutlinedTextField(
                             value = firstName,
                             onValueChange = { firstName = it },
-                            label = { Text("Имя") },
+                            label = { Text("Имя (необязательно)") },
                             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp)
                         )
+
                         Spacer(modifier = Modifier.height(12.dp))
+
                         OutlinedTextField(
                             value = lastName,
                             onValueChange = { lastName = it },
-                            label = { Text("Фамилия") },
+                            label = { Text("Фамилия (необязательно)") },
                             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
@@ -149,10 +206,31 @@ fun AuthScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     if (error != null) {
-                        Text(error!!, color = Color.Red, fontSize = 12.sp)
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = error!!,
+                                color = Color.Red,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
+                    val isRegisterEnabled = if (!isLoginMode) {
+                        email.isNotBlank() &&
+                                password.isNotBlank() &&
+                                confirmPassword.isNotBlank() &&
+                                password == confirmPassword &&
+                                !isLoading &&
+                                passwordMismatchError == null
+                    } else {
+                        email.isNotBlank() && password.isNotBlank() && !isLoading
+                    }
 
                     Button(
                         onClick = {
@@ -163,11 +241,11 @@ fun AuthScreen(
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
-                        enabled = !isLoading,
+                        enabled = isRegisterEnabled,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        if (isLoading) {
+                        if (isLoading || isSyncing) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
                         } else {
                             Text(if (isLoginMode) "Войти" else "Зарегистрироваться", fontSize = 16.sp)
@@ -176,9 +254,11 @@ fun AuthScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    TextButton(onClick = { isLoginMode = !isLoginMode }) {
+                    TextButton(onClick = {
+                        isLoginMode = !isLoginMode
+                    }) {
                         Text(
-                            if (isLoginMode) "Зарегистрируйтесь" else "Войдите",
+                            if (isLoginMode) "Нет аккаунта? Зарегистрируйтесь" else "Уже есть аккаунт? Войдите",
                             color = Color(0xFF3949AB)
                         )
                     }
