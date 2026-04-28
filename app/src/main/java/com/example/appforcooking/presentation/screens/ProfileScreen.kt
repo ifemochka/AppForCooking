@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -33,7 +34,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -84,7 +84,6 @@ fun ProfileScreen(
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
-
     val keyboardController = LocalSoftwareKeyboardController.current
 
     var isSearching by remember { mutableStateOf(false) }
@@ -131,7 +130,7 @@ fun ProfileScreen(
                 val database = CookingDatabase.getDatabase(context)
                 val repository = UserRepository(
                     userDao = database.userDao(),
-                    userProfileDao = database.userProfileDao() // Добавляем ProfileDao
+                    userProfileDao = database.userProfileDao()
                 )
                 return ProfileViewModel(
                     getUserProfileUseCase = GetUserProfileUseCase(repository),
@@ -169,15 +168,13 @@ fun ProfileScreen(
     }
 
     LaunchedEffect(successMessageSearch, searchError) {
-        if (successMessageSearch!= null || searchError != null) {
+        if (successMessageSearch != null || searchError != null) {
             delay(3000)
             searchViewModel.clearMessages()
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.background),
             contentDescription = "Фон",
@@ -186,396 +183,392 @@ fun ProfileScreen(
             alpha = 0.5f
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(30.dp))
-
-            if (userProfile?.firstName != null || userProfile?.lastName != null) {
-                Text(
-                    text = "${userProfile?.firstName ?: ""} ${userProfile?.lastName ?: ""}".trim(),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-
-            Text(
-                text = userProfile?.email ?: "test@example.com",
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { onLogout() },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text("Выйти из аккаунта")
-            }
-            if (error != null) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+            item {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
+                    if (userProfile?.firstName != null || userProfile?.lastName != null) {
+                        Text(
+                            text = "${userProfile?.firstName ?: ""} ${userProfile?.lastName ?: ""}".trim(),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
                     Text(
-                        text = error!!,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(16.dp)
+                        text = userProfile?.email ?: "test@example.com",
+                        fontSize = 16.sp,
+                        color = Color.Gray
                     )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = { onLogout() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Выйти из аккаунта")
+                    }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            if (error != null) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text(
+                            text = error!!,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
             }
 
             if (successMessage != null) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Text(
-                        text = successMessage!!,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Text(
+                            text = successMessage!!,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
             }
 
             if (isLoading) {
-                CircularProgressIndicator()
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    if (isEditing) {
-                        // Режим редактирования
-                        OutlinedTextField(
-                            value = editedFirstName,
-                            onValueChange = { editedFirstName = it },
-                            label = { Text("Имя") },
-                            modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        OutlinedTextField(
-                            value = editedLastName,
-                            onValueChange = { editedLastName = it },
-                            label = { Text("Фамилия") },
-                            modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Button(
-                                onClick = { isEditing = false },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                            ) {
-                                Text("Отмена")
-                            }
-
-                            Button(
-                                onClick = {
-                                    viewModel.updateUserProfile(
-                                        firstName = editedFirstName.ifBlank { null },
-                                        lastName = editedLastName.ifBlank { null }
-                                    )
-                                    isEditing = false
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Сохранить")
-                            }
-                        }
-                    } else {
-                        ProfileInfoRow(
-                            icon = Icons.Default.Person,
-                            label = "Имя",
-                            value = userProfile?.firstName ?: "Не указано"
-                        )
-
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-                        ProfileInfoRow(
-                            icon = Icons.Default.Person,
-                            label = "Фамилия",
-                            value = userProfile?.lastName ?: "Не указано"
-                        )
-
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-                        ProfileInfoRow(
-                            icon = Icons.Default.Email,
-                            label = "Email",
-                            value = userProfile?.email ?: "test@example.com"
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = { isEditing = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary
-                            )
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Редактировать профиль")
-                        }
-                    }
-
-
-
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFE8F5E9)
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Button(
-                        onClick = { navController.navigate("cooking_history") },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF3949AB)
-                        )
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("История приготовлений")
+                        CircularProgressIndicator()
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                elevation = CardDefaults.cardElevation(4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(4.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Text(
-                            text = "Мои аллергии",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        if (isEditing) {
+                            OutlinedTextField(
+                                value = editedFirstName,
+                                onValueChange = { editedFirstName = it },
+                                label = { Text("Имя") },
+                                modifier = Modifier.fillMaxWidth(),
+                                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
+                            )
 
-                        if (allergies.isNotEmpty()) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
-                                modifier = Modifier.size(32.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            OutlinedTextField(
+                                value = editedLastName,
+                                onValueChange = { editedLastName = it },
+                                label = { Text("Фамилия") },
+                                modifier = Modifier.fillMaxWidth(),
+                                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "${allergies.size}",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.error
+                                Button(
+                                    onClick = { isEditing = false },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.onErrorContainer
                                     )
+                                ) {
+                                    Text("Отмена")
                                 }
-                            }
-                        }
-                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Divider(
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.3f),
-                        thickness = 1.dp
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = {
-                            searchQuery = it
-                            searchViewModel.onSearchQueryChanged(it)
-                            isSearching = it.isNotEmpty()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Добавить аллегрии...") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = {
-                                    searchQuery = ""
-                                    searchViewModel.onSearchQueryChanged("")
-                                    isSearching = false
-                                    keyboardController?.hide()
-                                }) {
-                                    Text("×", fontSize = 24.sp)
+                                Button(
+                                    onClick = {
+                                        viewModel.updateUserProfile(
+                                            firstName = editedFirstName.ifBlank { null },
+                                            lastName = editedLastName.ifBlank { null }
+                                        )
+                                        isEditing = false
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Сохранить")
                                 }
-                            }
-                        },
-                        shape = RoundedCornerShape(24.dp),
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    if (searchError != null) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            )
-                        ) {
-                            Text(
-                                text = searchError!!,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    if (successMessageSearch != null) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        ) {
-                            Text(
-                                text = successMessageSearch!!,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    if (isSearching) {
-                        // Показываем результаты поиска
-                        if (isSearchLoading) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                        } else if (searchQuery.length >= 2 && searchResults.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Ничего не найдено",
-                                    color = Color.Gray
-                                )
                             }
                         } else {
-                            LazyColumn(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                contentPadding = PaddingValues(bottom = 16.dp)
+                            ProfileInfoRow(
+                                icon = Icons.Default.Person,
+                                label = "Имя",
+                                value = userProfile?.firstName ?: "Не указано"
+                            )
+
+                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                            ProfileInfoRow(
+                                icon = Icons.Default.Person,
+                                label = "Фамилия",
+                                value = userProfile?.lastName ?: "Не указано"
+                            )
+
+                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                            ProfileInfoRow(
+                                icon = Icons.Default.Email,
+                                label = "Email",
+                                value = userProfile?.email ?: "test@example.com"
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = { isEditing = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondary
+                                )
                             ) {
-                                items(searchResults) { product ->
-                                    ProductSearchItem(
-                                        product = product,
-                                        onAddClick = {
-                                            searchViewModel.addAllergyToPantry(product)
-                                            allergyViewModel.loadUserAllergies()
-                                            keyboardController?.hide()
-                                            searchQuery = ""
-                                            isSearching = false
-                                        }
-                                    )
-                                }
+                                Icon(Icons.Default.Edit, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Редактировать профиль")
                             }
                         }
                     }
+                }
+            }
 
+            item {
+                Button(
+                    onClick = { navController.navigate("cooking_history") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF3949AB),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "История приготовлений",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
 
-                    if (allergies.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "У вас нет аллергий",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "Добавьте продукты, на которые у вас аллергия",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    textAlign = TextAlign.Center
-                                )
+                            Text(
+                                text = "Мои аллергии",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+
+                            if (allergies.isNotEmpty()) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = "${allergies.size}",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
                             }
                         }
-                    } else {
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 400.dp)
-                        ) {
-                            items(allergies) { allergy ->
-                                ProductItem(
-                                    product = allergy,
-                                    onDeleteClick = {
-                                        allergyViewModel.removeAllergy(allergy)
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Divider(
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.3f),
+                            thickness = 1.dp
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = {
+                                searchQuery = it
+                                searchViewModel.onSearchQueryChanged(it)
+                                isSearching = it.isNotEmpty()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Добавить аллергию...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = {
+                                        searchQuery = ""
+                                        searchViewModel.onSearchQueryChanged("")
+                                        isSearching = false
+                                        keyboardController?.hide()
+                                    }) {
+                                        Text("×", fontSize = 24.sp)
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(24.dp),
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (searchError != null) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer
                                 )
+                            ) {
+                                Text(
+                                    text = searchError!!,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        if (successMessageSearch != null) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                )
+                            ) {
+                                Text(
+                                    text = successMessageSearch!!,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        if (isSearching) {
+                            if (isSearchLoading) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            } else if (searchQuery.length >= 2 && searchResults.isEmpty()) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "Ничего не найдено",
+                                        color = Color.Gray
+                                    )
+                                }
+                            } else {
+                                LazyColumn(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.heightIn(max = 300.dp)
+                                ) {
+                                    items(searchResults) { product ->
+                                        ProductSearchItem(
+                                            product = product,
+                                            onAddClick = {
+                                                searchViewModel.addAllergyToPantry(product)
+                                                allergyViewModel.loadUserAllergies()
+                                                keyboardController?.hide()
+                                                searchQuery = ""
+                                                isSearching = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            if (allergies.isEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "У вас нет аллергий",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "Добавьте продукты, на которые у вас аллергия",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            } else {
+                                LazyColumn(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.heightIn(max = 400.dp)
+                                ) {
+                                    items(allergies) { allergy ->
+                                        ProductItem(
+                                            product = allergy,
+                                            onDeleteClick = {
+                                                allergyViewModel.removeAllergy(allergy)
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -584,7 +577,6 @@ fun ProfileScreen(
         }
     }
 }
-
 
 @Composable
 fun ProfileInfoRow(

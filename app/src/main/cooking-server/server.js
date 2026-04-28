@@ -551,6 +551,106 @@ app.get('/api/user/pantry/:userId', async (req, res) => {
     }
 });
 
+app.post('/api/user/allergy/add', async (req, res) => {
+    try {
+        const { userId, productId } = req.body;
+
+        if (!userId || !productId) {
+            return res.status(400).json({ error: 'userId and productId required' });
+        }
+
+        const product = await db.get('SELECT * FROM product WHERE product_id = ?', [productId]);
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        const existing = await db.get(
+            'SELECT * FROM allergy WHERE user_id = ? AND product_id = ?',
+            [userId, productId]
+        );
+
+        if (!existing) {
+            await db.run(
+                'INSERT INTO allergy (user_id, product_id) VALUES (?, ?)',
+                [userId, productId]
+            );
+            console.log('Allergy added');
+        }
+
+        res.json({
+            success: true,
+            message: 'Allergy added',
+            userId: userId,
+            productId: productId
+        });
+
+    } catch (error) {
+        console.error('Add allergy error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/user/allergy/remove', async (req, res) => {
+    try {
+        const userId = parseInt(req.query.userId);
+        const productId = parseInt(req.query.productId);
+
+
+        if (!userId || !productId) {
+            return res.status(400).json({ error: 'userId and productId required' });
+        }
+
+        const result = await db.run(
+            'DELETE FROM allergy WHERE user_id = ? AND product_id = ?',
+            [userId, productId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Allergy removed',
+            deleted: result.changes
+        });
+
+    } catch (error) {
+        console.error('Remove allergy error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/user/profile/update', async (req, res) => {
+    try {
+        const { userId, firstName, lastName, avatarUrl, birthDate } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ error: 'userId required' });
+        }
+
+        await db.run(
+            `UPDATE user_profile
+             SET first_name = ?, last_name = ?, avatar_url = ?, birth_date = ?
+             WHERE user_id = ?`,
+            [firstName || '', lastName || '', avatarUrl || null, birthDate || null, userId]
+        );
+
+        const updatedProfile = await db.get(
+            'SELECT * FROM user_profile WHERE user_id = ?',
+            [userId]
+        );
+
+        console.log('Profile updated');
+
+        res.json({
+            success: true,
+            message: 'Profile updated',
+            profile: updatedProfile
+        });
+
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 async function start() {
     await initDatabase();
 

@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appforcooking.data.local.database.CookingDatabase
+import com.example.appforcooking.data.repositories.SyncChangesRepository
+import com.example.appforcooking.data.server.RetrofitClient
 import com.example.appforcooking.domain.models.Product
 import com.example.appforcooking.domain.usecases.GetUserAllergiesUseCase
 import com.example.appforcooking.domain.usecases.RemoveAllergyFromUserUseCase
@@ -17,6 +19,10 @@ class AllergyViewModel (
     private val getUserAllergiesUseCase: GetUserAllergiesUseCase,
     private val removeAllergyFromUserUseCase: RemoveAllergyFromUserUseCase
 ) : ViewModel() {
+
+    private val syncRepository = SyncChangesRepository(
+        RetrofitClient.apiService
+    )
 
     private val _products = MutableStateFlow<List<Product>>(emptyList())
     val products: StateFlow<List<Product>> = _products.asStateFlow()
@@ -62,12 +68,17 @@ class AllergyViewModel (
                 val userId = CookingDatabase.currentUserId
                 removeAllergyFromUserUseCase(userId, product.productId)
 
-                _successMessage.value = "Аллергий на '${product.name}' удалена"
+                val serverSuccess = syncRepository.removeAllergyOnServer(userId, product.productId)
 
-                // Обновляем список продуктов
+                if (serverSuccess) {
+                    _successMessage.value = "Аллергия на '${product.name}' удалена (синхронизировано)"
+                } else {
+                    _successMessage.value = "Аллергия на '${product.name}' удалена локально, но не синхронизирована"
+                }
+
                 loadUserAllergies()
 
-                Log.d("ProductViewModel", "Аллергия на ${product.name} удален у пользователя $userId")
+                Log.d("AllergyViewModel", "Аллергия на ${product.name} удалена, синхронизация: $serverSuccess")
             } catch (e: Exception) {
                 _error.value = "Ошибка удаления: ${e.message}"
                 Log.e("AllergyViewModel", "Ошибка удаления", e)

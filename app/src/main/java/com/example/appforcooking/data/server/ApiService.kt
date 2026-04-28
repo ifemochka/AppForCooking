@@ -36,9 +36,21 @@ interface ApiService {
     @POST("api/user/pantry/add")
     suspend fun addToPantry(@Body request: PantryAddRequest): Response<Map<String, Any>>
 
+    @POST("api/user/allergy/add")
+    suspend fun addAllergy(@Body request: AllergyAddRequest): Response<Map<String, Any>>
+
     @DELETE("api/user/pantry/remove")
     suspend fun removeFromPantry(
         @Query("userId") userId: Long,
         @Query("productId") productId: Long
     ): Response<Map<String, Any>>
+
+    @DELETE("api/user/allergy/remove")
+    suspend fun removeAllergy(
+        @Query("userId") userId: Long,
+        @Query("productId") productId: Long
+    ): Response<Map<String, Any>>
+
+    @POST("api/user/profile/update")
+    suspend fun updateProfile(@Body request: ProfileUpdateRequest): Response<Map<String, Any>>
 }

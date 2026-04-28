@@ -100,11 +100,20 @@ class SearchViewModel(
         viewModelScope.launch {
             try {
                 val userId = CookingDatabase.currentUserId
+
                 addAllergyToUserUseCase(userId, product.productId.toLong())
-                successMessage = "Аллергия на продукт ${product.name} добавлена"
+
+                val serverSuccess = syncRepository.addAllergyOnServer(userId, product.productId.toLong())
+
+                if (serverSuccess) {
+                    successMessage = "Аллергия на продукт '${product.name}' добавлена (синхронизировано)"
+                } else {
+                    successMessage = "Аллергия на продукт '${product.name}' добавлена локально, но не синхронизирована"
+                }
+
                 searchQuery = ""
                 searchResults = emptyList()
-                Log.d("SearchViewModel", "Аллергия на продукт ${product.name} добавлена пользователю $userId")
+                Log.d("SearchViewModel", "Аллергия на продукт ${product.name} добавлена, синхронизация: $serverSuccess")
             } catch (e: Exception) {
                 error = "Ошибка добавления: ${e.message}"
                 Log.e("SearchViewModel", "Ошибка добавления", e)
