@@ -53,4 +53,16 @@ interface ApiService {
 
     @POST("api/user/profile/update")
     suspend fun updateProfile(@Body request: ProfileUpdateRequest): Response<Map<String, Any>>
+
+    @POST("api/user/shopping-list/add")
+    suspend fun addToShoppingList(@Body request: ShoppingListAddRequest): Response<Map<String, Any>>
+
+    @DELETE("api/user/shopping-list/remove")
+    suspend fun removeFromShoppingList(
+        @Query("userId") userId: Long,
+        @Query("productId") productId: Long
+    ): Response<Map<String, Any>>
+
+    @POST("api/user/cooking-history/add")
+    suspend fun addToCookingHistory(@Body request: CookingHistoryAddRequest): Response<Map<String, Any>>
 }

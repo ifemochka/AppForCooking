@@ -53,3 +53,30 @@ data class ProfileUpdateRequest(
     @SerializedName("birthDate")
     val birthDate: String? = null
 )
+
+data class ShoppingListAddRequest(
+    @SerializedName("userId")
+    val userId: Long,
+
+    @SerializedName("productIds")
+    val productIds: List<Long>
+)
+
+data class ShoppingListRemoveRequest(
+    @SerializedName("userId")
+    val userId: Long,
+
+    @SerializedName("productId")
+    val productId: Long
+)
+
+data class CookingHistoryAddRequest(
+    @SerializedName("userId")
+    val userId: Long,
+
+    @SerializedName("recipeId")
+    val recipeId: Long,
+
+    @SerializedName("rating")
+    val rating: Int? = null
+)

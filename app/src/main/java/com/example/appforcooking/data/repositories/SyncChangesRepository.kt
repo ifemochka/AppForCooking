@@ -3,9 +3,11 @@ package com.example.appforcooking.data.repositories
 import android.util.Log
 import com.example.appforcooking.data.server.ApiService
 import com.example.appforcooking.data.server.dto.AllergyAddRequest
+import com.example.appforcooking.data.server.dto.CookingHistoryAddRequest
 import com.example.appforcooking.data.server.dto.PantryAddRequest
 import com.example.appforcooking.data.server.dto.PantryRemoveRequest
 import com.example.appforcooking.data.server.dto.ProfileUpdateRequest
+import com.example.appforcooking.data.server.dto.ShoppingListAddRequest
 
 class SyncChangesRepository(
     private val apiService: ApiService
@@ -52,13 +54,13 @@ class SyncChangesRepository(
             val response = apiService.addAllergy(AllergyAddRequest(userId, productId))
             val success = response.isSuccessful
             if (success) {
-                Log.d(TAG, "✅ Аллергия на продукт $productId добавлена на сервер")
+                Log.d(TAG, "Аллергия на продукт $productId добавлена на сервер")
             } else {
-                Log.e(TAG, "❌ Ошибка добавления аллергии: ${response.code()} ${response.message()}")
+                Log.e(TAG, "Ошибка добавления аллергии: ${response.code()} ${response.message()}")
             }
             success
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Исключение: ${e.message}", e)
+            Log.e(TAG, "Исключение: ${e.message}", e)
             false
         }
     }
@@ -69,13 +71,13 @@ class SyncChangesRepository(
             val response = apiService.removeAllergy(userId, productId)
             val success = response.isSuccessful
             if (success) {
-                Log.d(TAG, "✅ Аллергия на продукт $productId удалена на сервере")
+                Log.d(TAG, "Аллергия на продукт $productId удалена на сервере")
             } else {
-                Log.e(TAG, "❌ Ошибка удаления аллергии: ${response.code()} ${response.message()}")
+                Log.e(TAG, "Ошибка удаления аллергии: ${response.code()} ${response.message()}")
             }
             success
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Исключение: ${e.message}", e)
+            Log.e(TAG, "Исключение: ${e.message}", e)
             false
         }
     }
@@ -96,13 +98,53 @@ class SyncChangesRepository(
             )
             val success = response.isSuccessful
             if (success) {
-                Log.d(TAG, "✅ Профиль пользователя $userId обновлен на сервере")
+                Log.d(TAG, "Профиль пользователя $userId обновлен на сервере")
             } else {
-                Log.e(TAG, "❌ Ошибка обновления профиля: ${response.code()} ${response.message()}")
+                Log.e(TAG, "шибка обновления профиля: ${response.code()} ${response.message()}")
             }
             success
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Исключение: ${e.message}", e)
+            Log.e(TAG, "Исключение: ${e.message}", e)
+            false
+        }
+    }
+
+    suspend fun addToShoppingListOnServer(userId: Long, productIds: List<Long>): Boolean {
+        return try {
+            Log.d(TAG, "Отправка на сервер: добавление ${productIds.size} продуктов в список покупок")
+            val response = apiService.addToShoppingList(ShoppingListAddRequest(userId, productIds))
+            val success = response.isSuccessful
+            if (success) {
+                Log.d(TAG, "Продукты добавлены в список покупок на сервере")
+            } else {
+                Log.e(TAG, "Ошибка добавления в список покупок: ${response.code()} ${response.message()}")
+            }
+            success
+        } catch (e: Exception) {
+            Log.e(TAG, "Исключение: ${e.message}", e)
+            false
+        }
+    }
+
+    suspend fun addToCookingHistoryOnServer(userId: Long, recipeId: Long, rating: Int? = null): Boolean {
+        return try {
+            Log.d(TAG, "Отправка на сервер: добавление рецепта $recipeId в историю приготовлений")
+            val response = apiService.addToCookingHistory(
+                CookingHistoryAddRequest(
+                    userId,
+                    recipeId,
+                    rating
+                )
+            )
+            val success = response.isSuccessful
+            if (success) {
+                Log.d(TAG, "Рецепт добавлен в историю приготовлений на сервере")
+            } else {
+                Log.e(TAG, "Ошибка добавления в историю: ${response.code()} ${response.message()}")
+            }
+            success
+        } catch (e: Exception) {
+            Log.e(TAG, "Исключение: ${e.message}", e)
             false
         }
     }

@@ -129,6 +129,16 @@ async function initDatabase() {
                 FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE,
                 FOREIGN KEY (recipe_id) REFERENCES recipe(recipe_id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS shopping_list_item (
+                item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
+                is_purchased INTEGER DEFAULT 0,
+                FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE,
+                FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE,
+                UNIQUE(user_id, product_id)
+            );
     `);
 
     if (productsList.length > 0) {
@@ -647,6 +657,105 @@ app.post('/api/user/profile/update', async (req, res) => {
 
     } catch (error) {
         console.error('Update profile error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/user/shopping-list/add', async (req, res) => {
+    try {
+        const { userId, productIds } = req.body;
+
+        if (!userId || !productIds || !Array.isArray(productIds)) {
+            return res.status(400).json({ error: 'userId and productIds array required' });
+        }
+
+        let addedCount = 0;
+
+        for (const productId of productIds) {
+            const existing = await db.get(
+                'SELECT * FROM shopping_list_item WHERE user_id = ? AND product_id = ?',
+                [userId, productId]
+            );
+
+            if (!existing) {
+                await db.run(
+                    'INSERT INTO shopping_list_item (user_id, product_id, is_purchased) VALUES (?, ?, ?)',
+                    [userId, productId, 0]
+                );
+                addedCount++;
+            }
+        }
+
+        console.log(`Added ${addedCount} items to shopping list`);
+
+        res.json({
+            success: true,
+            message: `${addedCount} products added to shopping list`,
+            addedCount: addedCount
+        });
+
+    } catch (error) {
+        console.error('Add to shopping list error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/user/shopping-list/remove', async (req, res) => {
+    try {
+        const userId = parseInt(req.query.userId);
+        const productId = parseInt(req.query.productId);
+
+
+        if (!userId || !productId) {
+            return res.status(400).json({ error: 'userId and productId required' });
+        }
+
+        const result = await db.run(
+            'DELETE FROM shopping_list_item WHERE user_id = ? AND product_id = ?',
+            [userId, productId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Product removed from shopping list',
+            deleted: result.changes
+        });
+
+    } catch (error) {
+        console.error('Remove from shopping list error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/user/cooking-history/add', async (req, res) => {
+    try {
+        const { userId, recipeId, rating } = req.body;
+
+        if (!userId || !recipeId) {
+            return res.status(400).json({ error: 'userId and recipeId required' });
+        }
+
+        const recipe = await db.get('SELECT * FROM recipe WHERE recipe_id = ?', [recipeId]);
+        if (!recipe) {
+            return res.status(404).json({ error: 'Recipe not found' });
+        }
+
+        await db.run(
+            'INSERT INTO cooking_history (user_id, recipe_id, cooked_at, rating) VALUES (?, ?, ?, ?)',
+            [userId, recipeId, Date.now(), rating || null]
+        );
+
+        console.log('Added to cooking history');
+
+        res.json({
+            success: true,
+            message: 'Recipe added to cooking history',
+            userId: userId,
+            recipeId: recipeId
+        });
+
+    } catch (error) {
+        console.error('Add to cooking history error:', error);
         res.status(500).json({ error: error.message });
     }
 });
