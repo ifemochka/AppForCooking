@@ -1,9 +1,11 @@
 package com.example.appforcooking.presentation.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -15,13 +17,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.appforcooking.R
 import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.local.database.dao.ShoppingListItemWithProduct
 import com.example.appforcooking.data.repositories.ProductRepository
@@ -101,15 +106,34 @@ fun ShoppingListScreen(navController: NavHostController) {
         },
         floatingActionButton = {
             if (purchasedItems.isNotEmpty()) {
-                FloatingActionButton(
+                ExtendedFloatingActionButton(
                     onClick = { viewModel.clearPurchased(userId) },
-                    containerColor = Color(0xFF3949AB)
+                    containerColor = Color(0xFF3949AB),
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(28.dp),
+                    modifier = Modifier.padding(end = 16.dp, bottom = 16.dp)
                 ) {
-                    Text("Добавить в холодильник")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Добавить в холодильник",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }
     ) { innerPadding ->
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.background),
+                contentDescription = "Фон",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+                alpha = 0.5f
+            )
+
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -171,6 +195,7 @@ fun ShoppingListScreen(navController: NavHostController) {
                 }
             }
         }
+    }
     }
 }
 
