@@ -3,6 +3,7 @@ package com.example.appforcooking.presentation.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -32,6 +33,8 @@ import com.example.appforcooking.presentation.viewmodels.ShoppingListViewModel
 fun ShoppingListScreen(navController: NavHostController) {
     val context = LocalContext.current
     val userId = CookingDatabase.currentUserId
+
+    val listState = rememberLazyListState()
 
     val shoppingRepository = remember {
         val db = CookingDatabase.getDatabase(context)
@@ -111,7 +114,7 @@ fun ShoppingListScreen(navController: NavHostController) {
                 }
             }
         } else {
-            LazyColumn(
+            LazyColumn(state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
