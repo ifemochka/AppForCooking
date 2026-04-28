@@ -1,5 +1,6 @@
 package com.example.appforcooking.presentation.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appforcooking.data.local.database.dao.ShoppingListItemWithProduct
@@ -43,13 +44,32 @@ class ShoppingListViewModel(
 
     fun togglePurchased(item: ShoppingListItemWithProduct, currentStatus: Boolean, userId: Long) {
         viewModelScope.launch {
-            shoppingListRepository.togglePurchased(item.id, currentStatus)
-            val serverSuccess = syncRepository.updateShoppingItemStatusOnServer(
-                userId,
-                item.productId,
-                !currentStatus
-            )
-            loadItems(userId)
+            val currentList = _items.value.toMutableList()
+            val index = currentList.indexOfFirst { it.id == item.id }
+            if (index != -1) {
+                val updatedItem = currentList[index].copy(isPurchased = !currentStatus)
+                currentList[index] = updatedItem
+                _items.value = currentList
+            }
+
+            launch {
+                shoppingListRepository.togglePurchased(item.id, currentStatus)
+                val serverSuccess = syncRepository.updateShoppingItemStatusOnServer(
+                    userId,
+                    item.productId,
+                    !currentStatus
+                )
+                if (!serverSuccess) {
+                    val currentListRollback = _items.value.toMutableList()
+                    val rollbackIndex = currentListRollback.indexOfFirst { it.id == item.id }
+                    if (rollbackIndex != -1) {
+                        val rollbackItem = currentListRollback[rollbackIndex].copy(isPurchased = currentStatus)
+                        currentListRollback[rollbackIndex] = rollbackItem
+                        _items.value = currentListRollback
+                    }
+                    Log.w("ShoppingListViewModel", "Не удалось синхронизировать статус с сервером")
+                }
+            }
         }
     }
 

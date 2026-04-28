@@ -62,6 +62,17 @@ fun ShoppingListScreen(navController: NavHostController) {
     val isLoading by viewModel.isLoading.collectAsState()
     val message by viewModel.message.collectAsState()
 
+    val purchasedItems by remember {
+        derivedStateOf {
+            items.filter { it.isPurchased }
+        }
+    }
+    val unpurchasedItems by remember {
+        derivedStateOf {
+            items.filter { !it.isPurchased }
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.loadItems(userId)
     }
@@ -71,9 +82,6 @@ fun ShoppingListScreen(navController: NavHostController) {
             android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
         }
     }
-
-    val purchasedItems = items.filter { it.isPurchased }
-    val unpurchasedItems = items.filter { !it.isPurchased }
 
     Scaffold(
         topBar = {
@@ -107,14 +115,20 @@ fun ShoppingListScreen(navController: NavHostController) {
                 CircularProgressIndicator()
             }
         } else if (items.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Список покупок пуст", style = MaterialTheme.typography.titleLarge)
                     Text("Добавьте продукты из рецептов", color = Color.Gray)
                 }
             }
         } else {
-            LazyColumn(state = listState,
+            LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
@@ -122,10 +136,13 @@ fun ShoppingListScreen(navController: NavHostController) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (unpurchasedItems.isNotEmpty()) {
-                    item {
+                    item(key = "header_unpurchased") {
                         Text("Купить:", fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
                     }
-                    items(unpurchasedItems) { item ->
+                    items(
+                        items = unpurchasedItems,
+                        key = { it.id }
+                    ) { item ->
                         ShoppingListItemCard(
                             item = item,
                             isPurchased = item.isPurchased,
@@ -135,11 +152,16 @@ fun ShoppingListScreen(navController: NavHostController) {
                 }
 
                 if (purchasedItems.isNotEmpty()) {
-                    item {
+                    item(key = "spacer") {
                         Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    item(key = "header_purchased") {
                         Text("Куплено:", fontWeight = FontWeight.Bold, color = Color.Gray)
                     }
-                    items(purchasedItems) { item ->
+                    items(
+                        items = purchasedItems,
+                        key = { it.id }
+                    ) { item ->
                         ShoppingListItemCard(
                             item = item,
                             isPurchased = item.isPurchased,
