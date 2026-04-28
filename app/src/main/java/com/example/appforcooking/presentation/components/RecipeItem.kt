@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.appforcooking.R
 import com.example.appforcooking.domain.models.Recipe
 
 @Composable
@@ -44,19 +45,17 @@ fun RecipeItem(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val imageResId = getImageResourceIdSafe(recipe.imageUrl)
 
-            if (recipe.imageUrl != null){
-                val imageResId = getImageResourceId(recipe.imageUrl)
-
-                androidx.compose.foundation.Image(
-                    painter = painterResource(id = imageResId),
-                    contentDescription = recipe.title,
-                    modifier = Modifier
-                        .size(100.dp)
-                        .padding(8.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop
-            )}
+            androidx.compose.foundation.Image(
+                painter = painterResource(id = imageResId),
+                contentDescription = recipe.title,
+                modifier = Modifier
+                    .size(100.dp)
+                    .padding(8.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
+            )
 
             Column(
                 modifier = Modifier
@@ -122,8 +121,16 @@ fun RecipeItem(
 }
 
 @Composable
-private fun getImageResourceId(imageName: String): Int {
-    val context = LocalContext.current
-    return context.resources.getIdentifier(imageName, "drawable", context.packageName)
+private fun getImageResourceIdSafe(imageName: String?): Int {
+    if (imageName.isNullOrBlank()) {
+        return R.drawable.ic_launcher_foreground
+    }
 
+    val context = LocalContext.current
+    return try {
+        val resId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+        if (resId != 0) resId else R.drawable.ic_launcher_foreground
+    } catch (e: Exception) {
+        R.drawable.ic_launcher_foreground
+    }
 }

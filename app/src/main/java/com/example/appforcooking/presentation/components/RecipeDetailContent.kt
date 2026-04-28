@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.appforcooking.R
 import com.example.appforcooking.domain.models.Recipe
 import com.example.appforcooking.domain.models.RecipeIngredient
 import com.example.appforcooking.ui.theme.Fonts
@@ -46,41 +47,14 @@ fun RecipeDetailContent(
                 .height(250.dp)
                 .background(Color.LightGray)
         ) {
-            if (recipe.imageUrl != null) {
-                val imageResId = getImageResourceId(recipe.imageUrl)
-                if (imageResId != 0) {
-                    Image(
-                        painter = painterResource(id = imageResId),
-                        contentDescription = recipe.title,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFFE0E0E0)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Картинки нет",
-                            fontSize = 60.sp
-                        )
-                    }
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFE0E0E0)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Картинки нет",
-                        fontSize = 60.sp
-                    )
-                }
-            }
+            val imageResId = getImageResourceIdSafe(recipe.imageUrl)
+
+            Image(
+                painter = painterResource(id = imageResId),
+                contentDescription = recipe.title,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
         }
 
         Card(
@@ -371,11 +345,16 @@ private fun StepItem(
 }
 
 @Composable
-private fun getImageResourceId(imageName: String): Int {
+private fun getImageResourceIdSafe(imageName: String?): Int {
+    if (imageName.isNullOrBlank()) {
+        return R.drawable.ic_launcher_foreground
+    }
+
     val context = LocalContext.current
     return try {
-        context.resources.getIdentifier(imageName, "drawable", context.packageName)
+        val resId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+        if (resId != 0) resId else R.drawable.ic_launcher_foreground
     } catch (e: Exception) {
-        0
+        R.drawable.ic_launcher_foreground
     }
 }

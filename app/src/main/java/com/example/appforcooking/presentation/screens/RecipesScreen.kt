@@ -119,7 +119,7 @@ fun RecipesScreen(navController: NavHostController) {
         modifier = Modifier.fillMaxSize()
     ) {
         Image(
-            painter = painterResource(id = R.drawable.yasuo),
+            painter = painterResource(id = R.drawable.background),
             contentDescription = "Фон кулинарии",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
