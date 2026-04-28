@@ -2,6 +2,7 @@ package com.example.appforcooking.data.server
 
 import com.example.appforcooking.data.server.dto.*
 import retrofit2.http.*
+import retrofit2.Response
 
 interface ApiService {
 
@@ -31,4 +32,13 @@ interface ApiService {
 
     @GET("api/user/sync")
     suspend fun syncUserData(@Query("userId") userId: Long): SyncResponse
+
+    @POST("api/user/pantry/add")
+    suspend fun addToPantry(@Body request: PantryAddRequest): Response<Map<String, Any>>
+
+    @DELETE("api/user/pantry/remove")
+    suspend fun removeFromPantry(
+        @Query("userId") userId: Long,
+        @Query("productId") productId: Long
+    ): Response<Map<String, Any>>
 }

@@ -119,9 +119,28 @@ class AuthViewModel(
                     )
 
                     CookingDatabase.currentUserId = userId
-                    Log.d(TAG, "Регистрация успешна, currentUserId=$userId")
-                    _isAuthenticated.value = true
-                    _navigationEvent.value = true
+                    Log.d(TAG, "Установлен currentUserId = ${CookingDatabase.currentUserId}")
+
+                    _isSyncing.value = true
+
+                    val syncRepository = SyncRepository(
+                        CookingApplication.appContext,
+                        RetrofitClient.apiService
+                    )
+
+                    val syncSuccess = syncRepository.syncUserData(userId)
+                    Log.d(TAG, "Синхронизация после регистрации: success=$syncSuccess")
+
+                    _isSyncing.value = false
+
+                    if (syncSuccess) {
+                        Log.d(TAG, "Регистрация и синхронизация успешны, currentUserId=$userId")
+                        _isAuthenticated.value = true
+                        _navigationEvent.value = true
+                    } else {
+                        Log.e(TAG, "Ошибка синхронизации после регистрации")
+                        _error.value = "Ошибка синхронизации данных"
+                    }
                 } else {
                     Log.e(TAG, "Ошибка регистрации: ${response.error}")
                     _error.value = response.error ?: "Ошибка регистрации"

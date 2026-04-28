@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appforcooking.data.local.database.CookingDatabase
+import com.example.appforcooking.data.repositories.SyncChangesRepository
 import com.example.appforcooking.domain.models.Product
 import com.example.appforcooking.domain.usecases.AddAllergyToUserUseCase
 import com.example.appforcooking.domain.usecases.AddProductToPantryUseCase
@@ -19,7 +20,6 @@ class SearchViewModel(
     private val searchProductsUseCase: SearchProductsUseCase,
     private val addProductToPantryUseCase: AddProductToPantryUseCase,
     private val addAllergyToUserUseCase: AddAllergyToUserUseCase
-
 ) : ViewModel() {
 
     var searchQuery by mutableStateOf("")
@@ -38,6 +38,7 @@ class SearchViewModel(
         private set
 
     private var searchJob: Job? = null
+    private val syncRepository = SyncChangesRepository(com.example.appforcooking.data.server.RetrofitClient.apiService)
 
     fun onSearchQueryChanged(query: String) {
         searchQuery = query
@@ -76,10 +77,18 @@ class SearchViewModel(
             try {
                 val userId = CookingDatabase.currentUserId
                 addProductToPantryUseCase(userId, product.productId.toLong())
-                successMessage = "Продукт '${product.name}' добавлен в холодильник"
+
+                val serverSuccess = syncRepository.addProductToPantryOnServer(userId, product.productId.toLong())
+
+                if (serverSuccess) {
+                    successMessage = "Продукт '${product.name}' добавлен в холодильник (синхронизировано)"
+                } else {
+                    successMessage = "Продукт '${product.name}' добавлен локально, но не синхронизирован"
+                }
+
                 searchQuery = ""
                 searchResults = emptyList()
-                Log.d("SearchViewModel", "Продукт ${product.name} добавлен пользователю $userId")
+                Log.d("SearchViewModel", "Продукт ${product.name} добавлен пользователю $userId, синхронизация: $serverSuccess")
             } catch (e: Exception) {
                 error = "Ошибка добавления: ${e.message}"
                 Log.e("SearchViewModel", "Ошибка добавления", e)
@@ -92,7 +101,7 @@ class SearchViewModel(
             try {
                 val userId = CookingDatabase.currentUserId
                 addAllergyToUserUseCase(userId, product.productId.toLong())
-                successMessage = "Аллергия на продукт ${product.name} добавлен"
+                successMessage = "Аллергия на продукт ${product.name} добавлена"
                 searchQuery = ""
                 searchResults = emptyList()
                 Log.d("SearchViewModel", "Аллергия на продукт ${product.name} добавлена пользователю $userId")

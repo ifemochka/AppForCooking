@@ -15,74 +15,75 @@ class SyncRepository(
 
     private val TAG = "SyncRepository"
 
+    private var isReferenceDataLoaded = false
+
     suspend fun syncUserData(userId: Long): Boolean = withContext(Dispatchers.IO) {
         Log.d(TAG, "Синхронизация для userId: $userId")
 
         try {
             val database = CookingDatabase.getDatabase(context)
 
-            Log.d(TAG, "Загрузка продуктов с сервера")
-            val productsFromServer = apiService.getProducts()
-            if (productsFromServer.isNotEmpty()) {
-                database.productDao().deleteAllProducts()
-                productsFromServer.forEach { productDto ->
-                    database.productDao().insertProduct(
-                        ProductEntity(
-                            productId = productDto.productId,
-                            name = productDto.name,
-                            category = productDto.category,
-                            defaultUnit = productDto.defaultUnit,
-                            caloriesPer100g = productDto.caloriesPer100g,
-                            barcode = productDto.barcode
-                        )
-                    )
-                }
-                Log.d(TAG, "Продукты загружены (${productsFromServer.size})")
-            } else {
-                Log.w(TAG, "Нет продуктов на сервере")
-            }
+            if (!isReferenceDataLoaded) {
+                Log.d(TAG, "Загрузка справочных данных")
 
-            Log.d(TAG, "Загрузка рецептов с сервера")
-            val recipesFromServer = apiService.getRecipes()
-            if (recipesFromServer.isNotEmpty()) {
-                database.recipeDao().deleteAllRecipes()
-                recipesFromServer.forEach { recipeDto ->
-                    database.recipeDao().insertRecipe(
-                        RecipeEntity(
-                            recipeId = recipeDto.recipeId,
-                            title = recipeDto.title,
-                            description = recipeDto.description,
-                            cookingTimeMinutes = recipeDto.cookingTimeMinutes,
-                            difficulty = recipeDto.difficulty,
-                            imageUrl = recipeDto.imageUrl,
-                            caloriesTotal = recipeDto.caloriesTotal,
-                            instructions = recipeDto.instructions
+                val productsFromServer = apiService.getProducts()
+                if (productsFromServer.isNotEmpty()) {
+                    database.productDao().deleteAllProducts()
+                    productsFromServer.forEach { productDto ->
+                        database.productDao().insertProduct(
+                            ProductEntity(
+                                productId = productDto.productId,
+                                name = productDto.name,
+                                category = productDto.category,
+                                defaultUnit = productDto.defaultUnit,
+                                caloriesPer100g = productDto.caloriesPer100g,
+                                barcode = productDto.barcode
+                            )
                         )
-                    )
+                    }
+                    Log.d(TAG, "Продукты загружены (${productsFromServer.size})")
                 }
-                Log.d(TAG, "Рецепты загружены (${recipesFromServer.size})")
-            } else {
-                Log.w(TAG, "Нет рецептов на сервере")
-            }
 
-            Log.d(TAG, "Загрузка ингредиентов рецептов с сервера")
-            val recipesIngredientsFromServer = apiService.getRecipeIngredients()
-            if (recipesIngredientsFromServer.isNotEmpty()) {
-                database.recipeIngredientDao().deleteAllRecipeIngredients()
-                recipesIngredientsFromServer.forEach { recipeIngredientDto ->
-                    database.recipeIngredientDao().insertRecipeIngredient(
-                        RecipeIngredientEntity(
-                            recipeIngredientId = recipeIngredientDto.recipeIngredientId,
-                            recipeId = recipeIngredientDto.recipeId,
-                            productId = recipeIngredientDto.productId,
-                            quantity = recipeIngredientDto.quantity,
-                            unit = recipeIngredientDto.unit
+                val recipesFromServer = apiService.getRecipes()
+                if (recipesFromServer.isNotEmpty()) {
+                    database.recipeDao().deleteAllRecipes()
+                    recipesFromServer.forEach { recipeDto ->
+                        database.recipeDao().insertRecipe(
+                            RecipeEntity(
+                                recipeId = recipeDto.recipeId,
+                                title = recipeDto.title,
+                                description = recipeDto.description,
+                                cookingTimeMinutes = recipeDto.cookingTimeMinutes,
+                                difficulty = recipeDto.difficulty,
+                                imageUrl = recipeDto.imageUrl,
+                                caloriesTotal = recipeDto.caloriesTotal,
+                                instructions = recipeDto.instructions
+                            )
                         )
-                    )
+                    }
+                    Log.d(TAG, "Рецепты загружены (${recipesFromServer.size})")
                 }
-                Log.d(TAG, "Ингредиенты рецептов загружены (${recipesIngredientsFromServer.size})")
+
+                val recipesIngredientsFromServer = apiService.getRecipeIngredients()
+                if (recipesIngredientsFromServer.isNotEmpty()) {
+                    database.recipeIngredientDao().deleteAllRecipeIngredients()
+                    recipesIngredientsFromServer.forEach { recipeIngredientDto ->
+                        database.recipeIngredientDao().insertRecipeIngredient(
+                            RecipeIngredientEntity(
+                                recipeIngredientId = recipeIngredientDto.recipeIngredientId,
+                                recipeId = recipeIngredientDto.recipeId,
+                                productId = recipeIngredientDto.productId,
+                                quantity = recipeIngredientDto.quantity,
+                                unit = recipeIngredientDto.unit
+                            )
+                        )
+                    }
+                    Log.d(TAG, "Ингредиенты загружены (${recipesIngredientsFromServer.size})")
+                }
+
+                isReferenceDataLoaded = true
             } else {
-                Log.w(TAG, "Нет ингредиентов рецептов на сервере")
+                Log.d(TAG, "Справочные данные загружены")
             }
 
 
@@ -92,30 +93,35 @@ class SyncRepository(
 
             if (response.success) {
                 response.userProfile?.let { profile ->
-                    database.userDao().deleteAllUsers()
+                    val existingUser = database.userDao().getUserById(profile.userId)
+                    if (existingUser == null) {
+                        val user = UserEntity(
+                            userId = profile.userId,
+                            email = profile.email,
+                            passwordHash = "",
+                            createdAt = System.currentTimeMillis()
+                        )
+                        database.userDao().insertOrReplace(user)
+                        Log.d(TAG, "Создан пользователь в таблице user: userId=${profile.userId}, email=${profile.email}")
+                    } else {
+                        Log.d(TAG, "Пользователь уже существует: userId=${profile.userId}")
+                    }
 
-                    val user = UserEntity(
-                        userId = profile.userId,
-                        email = profile.email,
-                        passwordHash = "",
-                        createdAt = System.currentTimeMillis()
-                    )
-                    database.userDao().insertOrReplace(user)
-                    Log.d(TAG, "Создан пользователь в таблице user: userId=${profile.userId}, email=${profile.email}")
-
-
-
-                    database.userProfileDao().deleteAllUsers()
-                    val userProfile = UserProfileEntity(
-                        profileId = profile.userId,
-                        userId = profile.userId,
-                        firstName = profile.firstName ?: "",
-                        lastName = profile.lastName ?: "",
-                        birthDate = profile.birthDate,
-                        avatarUrl = profile.avatarUrl
-                    )
-                    database.userProfileDao().insertOrUpdate(userProfile)
-                    Log.d(TAG, "Профиль сохранен: userId=${profile.userId}, email=${profile.email}")
+                    val existingProfile = database.userProfileDao().getByUserId(profile.userId)
+                    if (existingProfile == null) {
+                        val userProfile = UserProfileEntity(
+                            profileId = profile.userId,
+                            userId = profile.userId,
+                            firstName = profile.firstName ?: "",
+                            lastName = profile.lastName ?: "",
+                            birthDate = profile.birthDate,
+                            avatarUrl = profile.avatarUrl
+                        )
+                        database.userProfileDao().insertOrUpdate(userProfile)
+                        Log.d(TAG, "Профиль сохранен: userId=${profile.userId}, email=${profile.email}")
+                    } else {
+                        Log.d(TAG, "Профиль уже существует: userId=${profile.userId}")
+                    }
                 }
 
                 Log.d(TAG, "Добавлено в инвентарь: ${response.pantryItems.size} продуктов")

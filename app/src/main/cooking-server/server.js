@@ -203,6 +203,16 @@ app.get('/api/recipes', async (req, res) => {
     }
 });
 
+// Все ингредиенты рецептов
+app.get('/api/recipeIngredients', async (req, res) => {
+    try {
+        const recipe_ingredients = await db.all('SELECT * FROM recipe_ingredient ORDER BY recipe_id');
+        res.json(recipe_ingredients);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Рецепт по ID
 app.get('/api/recipes/:id', async (req, res) => {
     try {
@@ -430,6 +440,113 @@ app.get('/api/debug/pantry-items', async (req, res) => {
         });
     } catch (error) {
         console.error('Ошибка:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/user/pantry/add', async (req, res) => {
+    try {
+        const { userId, productId, isLow } = req.body;
+
+        if (!userId || !productId) {
+            return res.status(400).json({ error: 'userId and productId required' });
+        }
+
+        const product = await db.get('SELECT * FROM product WHERE product_id = ?', [productId]);
+        if (!product) {
+            console.log('Product not found:', productId);
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        const existing = await db.get(
+            'SELECT * FROM pantry_item WHERE user_id = ? AND product_id = ?',
+            [userId, productId]
+        );
+
+        if (existing) {
+            await db.run(
+                'UPDATE pantry_item SET is_low = ? WHERE user_id = ? AND product_id = ?',
+                [isLow ? 1 : 0, userId, productId]
+            );
+            res.json({
+                success: true,
+                message: 'Product updated in pantry',
+                userId: userId,
+                productId: productId
+            });
+        } else {
+            await db.run(
+                'INSERT INTO pantry_item (user_id, product_id, is_low) VALUES (?, ?, ?)',
+                [userId, productId, isLow ? 1 : 0]
+            );
+            res.json({
+                success: true,
+                message: 'Product added to pantry',
+                userId: userId,
+                productId: productId
+            });
+        }
+
+    } catch (error) {
+        console.error('Add to pantry error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/user/pantry/remove', async (req, res) => {
+    try {
+        const userId = parseInt(req.query.userId);
+        const productId = parseInt(req.query.productId);
+
+        if (!userId || !productId) {
+            return res.status(400).json({ error: 'userId and productId required' });
+        }
+
+        const result = await db.run(
+            'DELETE FROM pantry_item WHERE user_id = ? AND product_id = ?',
+            [userId, productId]
+        );
+
+        if (result.changes > 0) {
+            res.json({
+                success: true,
+                message: 'Product removed from pantry',
+                deleted: result.changes
+            });
+        } else {
+            res.json({
+                success: true,
+                message: 'No record found to delete',
+                deleted: 0
+            });
+        }
+
+    } catch (error) {
+        console.error('Remove from pantry error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/user/pantry/:userId', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+
+        const pantryItems = await db.all(`
+            SELECT pi.pantry_item_id, pi.product_id, p.name as product_name, pi.is_low
+            FROM pantry_item pi
+            JOIN product p ON pi.product_id = p.product_id
+            WHERE pi.user_id = ?
+        `, [userId]);
+
+        res.json({
+            success: true,
+            userId: userId,
+            items: pantryItems,
+            count: pantryItems.length
+        });
+
+    } catch (error) {
+        console.error('Get pantry error:', error);
         res.status(500).json({ error: error.message });
     }
 });
