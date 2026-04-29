@@ -223,7 +223,7 @@ fun ProductListScreen() {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ru-RU")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ru-RU")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите на русском языке...")
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите на русском языке")
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
 
         }

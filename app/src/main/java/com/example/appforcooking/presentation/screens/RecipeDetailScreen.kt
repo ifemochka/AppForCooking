@@ -133,7 +133,6 @@ fun RecipeDetailScreen(
                 )
             }
         } else {
-            // Обновите RecipeDetailContent:
             RecipeDetailContent(
                 recipe = recipe!!,
                 ingredients = ingredients,

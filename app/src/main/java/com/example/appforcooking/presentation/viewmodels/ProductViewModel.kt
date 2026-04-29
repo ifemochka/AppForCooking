@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appforcooking.data.local.database.CookingDatabase
+import com.example.appforcooking.data.repositories.SyncChangesRepository
+import com.example.appforcooking.data.server.RetrofitClient
 import com.example.appforcooking.domain.models.Product
 import com.example.appforcooking.domain.usecases.GetUserProductsUseCase
 import com.example.appforcooking.domain.usecases.RemoveProductFromPantryUseCase
@@ -17,6 +19,7 @@ class ProductViewModel(
     private val getUserProductsUseCase: GetUserProductsUseCase,
     private val removeProductFromPantryUseCase: RemoveProductFromPantryUseCase
 ) : ViewModel() {
+    private val syncRepository = SyncChangesRepository(RetrofitClient.apiService)
 
     private val _products = MutableStateFlow<List<Product>>(emptyList())
     val products: StateFlow<List<Product>> = _products.asStateFlow()
@@ -64,13 +67,18 @@ class ProductViewModel(
             try {
                 val userId = CookingDatabase.currentUserId
                 removeProductFromPantryUseCase(userId, product.productId)
+                val serverSuccess = syncRepository.removeProductFromPantryOnServer(userId, product.productId)
 
-                _successMessage.value = "Продукт '${product.name}' удален из холодильника"
+                if (serverSuccess) {
+                    _successMessage.value = "Продукт '${product.name}' удален из холодильника (синхронизировано)"
+                } else {
+                    _successMessage.value = "Продукт '${product.name}' удален локально, но не синхронизирован"
+                }
 
                 // Обновляем список продуктов
                 loadUserProducts()
 
-                Log.d("ProductViewModel", "Продукт ${product.name} удален у пользователя $userId")
+                Log.d("ProductViewModel", "Продукт ${product.name} удален у пользователя $userId, синхронизация: $serverSuccess")
             } catch (e: Exception) {
                 _error.value = "Ошибка удаления: ${e.message}"
                 Log.e("ProductViewModel", "Ошибка удаления", e)

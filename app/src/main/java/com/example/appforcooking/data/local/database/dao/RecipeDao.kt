@@ -30,6 +30,9 @@ interface RecipeDao {
     @Insert
     suspend fun insertRecipe(recipe: RecipeEntity)
 
+    @Query("DELETE FROM recipe")
+    suspend fun deleteAllRecipes()
+
     @Insert
     suspend fun insertRecipeIngredient(ingredient: RecipeIngredientEntity)
 }

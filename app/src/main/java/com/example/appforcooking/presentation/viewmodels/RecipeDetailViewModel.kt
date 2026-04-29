@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appforcooking.data.local.database.CookingDatabase
 import com.example.appforcooking.data.repositories.ShoppingListRepository
+import com.example.appforcooking.data.repositories.SyncChangesRepository
+import com.example.appforcooking.data.server.RetrofitClient
 import com.example.appforcooking.domain.models.Recipe
 import com.example.appforcooking.domain.models.RecipeIngredient
 import com.example.appforcooking.domain.usecases.AddToCookingHistoryUseCase
@@ -23,6 +25,11 @@ class RecipeDetailViewModel(
     private val getRecipeIngredientsUseCase: GetRecipeIngredientsUseCase,
     private val addToCookingHistoryUseCase: AddToCookingHistoryUseCase
 ) : ViewModel() {
+
+    private val syncRepository = SyncChangesRepository(
+        RetrofitClient.apiService
+    )
+
 
     private val _recipe = MutableStateFlow<Recipe?>(null)
     val recipe: StateFlow<Recipe?> = _recipe.asStateFlow()
@@ -68,10 +75,15 @@ class RecipeDetailViewModel(
                 }
 
                 val productIds = missingIngredients.map { it.productId }
-                val success = repository.addMissingIngredients(userId, productIds)
 
-                if (success) {
-                    _shoppingListMessage.value = "Добавлено ${missingIngredients.size} продуктов в список покупок"
+                val localSuccess = repository.addMissingIngredients(userId, productIds)
+
+                val serverSuccess = syncRepository.addToShoppingListOnServer(userId, productIds)
+
+                if (localSuccess && serverSuccess) {
+                    _shoppingListMessage.value = "Добавлено ${missingIngredients.size} продуктов в список покупок (синхронизировано)"
+                } else if (localSuccess) {
+                    _shoppingListMessage.value = "Добавлено ${missingIngredients.size} продуктов локально, но не синхронизировано"
                 } else {
                     _shoppingListMessage.value = "Ошибка добавления в список"
                 }
@@ -113,13 +125,18 @@ class RecipeDetailViewModel(
             _isAddingToHistory.value = true
             try {
                 val userId = CookingDatabase.currentUserId
-                val recipeId = _recipe.value?.recipeId ?: return@launch
-                val success = addToCookingHistoryUseCase(userId, recipeId)
+                val recipeIdValue = _recipe.value?.recipeId ?: return@launch
 
-                if (success) {
-                    _historyMessage.value = "Рецепт добавлен в историю"
+                val localSuccess = addToCookingHistoryUseCase(userId, recipeIdValue)
+
+                val serverSuccess = syncRepository.addToCookingHistoryOnServer(userId, recipeIdValue)
+
+                if (localSuccess && serverSuccess) {
+                    _historyMessage.value = "Рецепт добавлен в историю (синхронизировано)"
+                } else if (localSuccess) {
+                    _historyMessage.value = "Рецепт добавлен в историю локально, но не синхронизирован"
                 } else {
-                    _historyMessage.value = "Ошибка"
+                    _historyMessage.value = "Ошибка добавления в историю"
                 }
 
                 delay(3000)

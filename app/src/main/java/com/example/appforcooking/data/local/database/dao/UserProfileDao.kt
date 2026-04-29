@@ -20,4 +20,16 @@ interface UserProfileDao {
 
     @Query("SELECT * FROM user_profile WHERE profile_id = :profileId")
     suspend fun getUserProfileById(profileId: Long): UserProfileEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdate(profile: UserProfileEntity)
+
+    @Query("SELECT * FROM user_profile WHERE user_id = :userId")
+    suspend fun getByUserId(userId: Long): UserProfileEntity?
+
+    @Query("DELETE FROM user_profile WHERE user_id = :userId")
+    suspend fun deleteByUserId(userId: Long)
+
+    @Query("DELETE FROM user_profile")
+    suspend fun deleteAllUsers()
 }

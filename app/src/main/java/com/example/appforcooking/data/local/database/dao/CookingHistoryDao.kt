@@ -27,6 +27,9 @@ interface CookingHistoryDao {
 
     @Query("DELETE FROM cooking_history WHERE user_id = :userId")
     suspend fun clearHistory(userId: Long)
+
+        @Query("DELETE FROM cooking_history WHERE user_id = :userId")
+        suspend fun deleteAllForUser(userId: Long)
 }
 
 data class CookingHistoryWithRecipe(

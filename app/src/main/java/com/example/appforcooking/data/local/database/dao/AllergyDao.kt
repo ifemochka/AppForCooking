@@ -28,4 +28,7 @@ interface AllergyDao {
 
     @Query("SELECT * FROM allergy WHERE user_id = :userId")
     suspend fun getAllergiesForUserSync(userId: Long): List<AllergyEntity>
+
+    @Query("DELETE FROM allergy WHERE user_id = :userId")
+    suspend fun deleteAllForUser(userId: Long)
 }

@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.appforcooking.R
 import com.example.appforcooking.domain.models.Recipe
 import com.example.appforcooking.domain.models.RecipeIngredient
 import com.example.appforcooking.ui.theme.Fonts
@@ -46,63 +47,21 @@ fun RecipeDetailContent(
                 .height(250.dp)
                 .background(Color.LightGray)
         ) {
-            if (recipe.imageUrl != null) {
-                val imageResId = getImageResourceId(recipe.imageUrl)
-                if (imageResId != 0) {
-                    Image(
-                        painter = painterResource(id = imageResId),
-                        contentDescription = recipe.title,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFFE0E0E0)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Картинки нет",
-                            fontSize = 60.sp
-                        )
-                    }
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFE0E0E0)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Картинки нет",
-                        fontSize = 60.sp
-                    )
-                }
-            }
+            val imageResId = getImageResourceIdSafe(recipe.imageUrl)
 
-            Button(
-                onClick = onAddToHistory,
-                enabled = !isAddingToHistory,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4CAF50)
-                )
-            ) {
-                if (isAddingToHistory) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
-                } else {
-                    Text("Готовлю")
-                }
-            }
+            Image(
+                painter = painterResource(id = imageResId),
+                contentDescription = recipe.title,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
         }
 
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            shape = MaterialTheme.shapes.large
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Column(
                 modifier = Modifier.padding(20.dp)
@@ -112,24 +71,22 @@ fun RecipeDetailContent(
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF3949AB),
-                    modifier = Modifier.padding(bottom = 12.dp),
                     fontFamily = Fonts.font
                 )
 
                 if (recipe.description.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = recipe.description,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(bottom = 16.dp),
-                        lineHeight = 24.sp
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     DetailItem(
@@ -138,20 +95,33 @@ fun RecipeDetailContent(
                         value = "${recipe.cookingTimeMinutes} мин",
                         color = Color(0xFF2196F3)
                     )
-
                     DetailItem(
                         icon = Icons.Default.Whatshot,
                         title = "Сложность",
                         value = recipe.difficulty,
                         color = Color(0xFF4CAF50)
                     )
-
                     DetailItem(
                         icon = Icons.Default.LocalFireDepartment,
                         title = "Калории",
                         value = "${recipe.caloriesTotal} ккал",
                         color = Color(0xFFFF9800)
                     )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onAddToHistory,
+                    enabled = !isAddingToHistory,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isAddingToHistory) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                    } else {
+                        Text("Готовлю")
+                    }
                 }
             }
         }
@@ -200,7 +170,7 @@ fun RecipeDetailContent(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 LinearProgressIndicator(
-                    progress = availableCount.toFloat() / ingredients.size,
+                    progress = if (ingredients.isNotEmpty()) availableCount.toFloat() / ingredients.size else 0f,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)
@@ -375,11 +345,16 @@ private fun StepItem(
 }
 
 @Composable
-private fun getImageResourceId(imageName: String): Int {
+private fun getImageResourceIdSafe(imageName: String?): Int {
+    if (imageName.isNullOrBlank()) {
+        return R.drawable.ic_launcher_foreground
+    }
+
     val context = LocalContext.current
     return try {
-        context.resources.getIdentifier(imageName, "drawable", context.packageName)
+        val resId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+        if (resId != 0) resId else R.drawable.ic_launcher_foreground
     } catch (e: Exception) {
-        0
+        R.drawable.ic_launcher_foreground
     }
 }
