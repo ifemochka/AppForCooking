@@ -1,8 +1,11 @@
 package com.example.appforcooking.presentation.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.FoodBank
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -19,12 +22,12 @@ object NavigationItems {
         BottomNavItem(
             name = "Продукты",
             route = "products",
-            icon = Icons.Default.Home
+            icon = Icons.Default.Fastfood
         ),
         BottomNavItem(
-            name = "Поиск",
+            name = "Рецепты",
             route = "recipes",
-            icon = Icons.Default.Search
+            icon = Icons.Default.RestaurantMenu
         ),
         BottomNavItem(
             "Список",
