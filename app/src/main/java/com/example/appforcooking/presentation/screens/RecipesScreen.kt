@@ -93,6 +93,10 @@ fun RecipesScreen(navController: NavHostController) {
     val selectedTab by viewModel.selectedTab.collectAsState()
     val shownRecipesConfig by viewModel.shownRecipesConfig.collectAsState()
 
+    LaunchedEffect(navController.currentBackStackEntry) {
+        viewModel.loadRecipes()
+    }
+
     LaunchedEffect(Unit) {
         viewModel.updateShownRecipesConfig(FilterState.currentFilters)
     }
